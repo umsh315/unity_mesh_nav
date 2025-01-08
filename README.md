@@ -209,9 +209,6 @@ ros2 bag play bagfile_name.db3
 
 - In simulation, the bridge between Unity and the system is not completely stable. At the system launch, if you see an error regarding 'ros_tcp_endpoint', simply try for a second time.
 
-## Main Contributors
-
-[Guofei Chen](https://gfchen01.cc), [Botao He](https://github.com/Bottle101), [Guanya Shi](https://www.gshi.me), and [Ji Zhang](https://frc.ri.cmu.edu/~zhangji)
 
 ## Credits
 

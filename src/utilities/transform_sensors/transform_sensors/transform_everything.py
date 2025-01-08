@@ -46,7 +46,7 @@ class Repuber(Node):
             }
         try:
             home_path = os.path.expanduser('~')
-            calib_file_path = os.path.join(home_path, 'Desktop/imu_calib_data.yaml')
+            calib_file_path = os.path.join(home_path, '桌面/imu_calib_data.yaml')
             calib_file = open(calib_file_path, 'r')
             calib_data = yaml.load(calib_file, Loader=yaml.FullLoader)
             print("imu_calib.yaml loaded")

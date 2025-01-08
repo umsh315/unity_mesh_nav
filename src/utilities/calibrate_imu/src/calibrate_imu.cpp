@@ -66,7 +66,7 @@ void imu_handler(const sensor_msgs::msg::Imu::ConstSharedPtr msg_in)
 
 void serialize_to_file(){
     const char* homeDir = getenv("HOME");
-    std::string file_path = std::string(homeDir) + "/Desktop/imu_calib_data.yaml";
+    std::string file_path = std::string(homeDir) + "/桌面/imu_calib_data.yaml";
     std::ofstream file;
     file.open(file_path, std::ios::out);
     file << "acc_bias_x: " << acc_bias_x << std::endl;
