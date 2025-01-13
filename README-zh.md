@@ -136,6 +136,9 @@ GStreamer LibAV插件
 - 基于FFmpeg/LibAV
 - 支持常见多媒体格式
 
+2、编译功能包
+colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
+
 2、IMU校准
 source install/setup.bash
 ros2 run calibrate_imu calibrate_imu
@@ -191,3 +194,21 @@ L1激光雷达特点：
    通常是较平缓的转角
 
 3、V-graph
+
+
+
+# 单独测试point-lio slam
+
+## 改参数文件
+   修改utlidar.yaml文件中pcd_save_en参数
+## 编译
+   colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release 
+## 建图
+   1、与go2建立通信
+   2、使用独立的launch文件，以下2个都可以
+      ros2 launch vehicle_simulator system_real_robot_only_slam.launch
+      ros2 launch point_lio_unilidar mapping_utlidar.launch 
+## 保存地图
+   地图保存在PCD文件夹中，使用以下命令可以查看
+   pcl_viewer scans.pcd 
+
