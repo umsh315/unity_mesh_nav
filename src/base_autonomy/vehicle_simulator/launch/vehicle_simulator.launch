@@ -2,7 +2,7 @@
 
   <arg name="sensorOffsetX" default="0.0"/>
   <arg name="sensorOffsetY" default="0.0"/>
-  <arg name="vehicleHeight" default="0.366"/>
+  <arg name="vehicleHeight" default="0.366"/>       # 地面到传感器距离
 
   <arg name="vehicleX" default="0.0"/>
   <arg name="vehicleY" default="0.0"/>
