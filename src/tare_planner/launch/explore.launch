@@ -31,7 +31,7 @@ def generate_launch_description():
 
     declare_scenario = DeclareLaunchArgument(
         'scenario',
-        default_value='indoor',
+        default_value='matterport',
         description='description for scenario argument')
 
     declare_rviz = DeclareLaunchArgument(

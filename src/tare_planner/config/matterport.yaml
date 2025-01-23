@@ -23,7 +23,7 @@ tare_planner_node:
     kExtendWayPoint : true
     kUseLineOfSightLookAheadPoint : true
     kNoExplorationReturnHome : true
-    kExtendWayPointDistanceBig : 4.0
+    kExtendWayPointDistanceBig : 4.0                # waypoint最远距离，默认值4.0
     kExtendWayPointDistanceSmall : 1.5
     kKeyposeCloudDwzFilterLeafSize : 0.05
     kRushHomeDist : 3.0
@@ -72,10 +72,10 @@ tare_planner_node:
     keypose_graph/kAddEdgeCollisionCheckPointNumThr : 1
 
     # ViewPointManager
-    viewpoint_manager/number_x : 40
-    viewpoint_manager/number_y : 40
+    viewpoint_manager/number_x : 10            # x轴视点数量，默认值40
+    viewpoint_manager/number_y : 10
     viewpoint_manager/number_z : 1
-    viewpoint_manager/resolution_x : 0.15
+    viewpoint_manager/resolution_x : 0.15     # x轴视点分辨率,默认0.15
     viewpoint_manager/resolution_y : 0.15
     viewpoint_manager/resolution_z : 0.0
     kConnectivityHeightDiffThr : 0.25
@@ -95,8 +95,8 @@ tare_planner_node:
     kCheckDynamicObstacleCollision : false
     kCollisionFrameCountMax : 3
 
-    kSensorRange : 3.0
-    kNeighborRange : 1.5
+    kSensorRange : 7.5                          # 传感器最大探测范围，默认3.0
+    kNeighborRange : 1.5                        # 相邻视点之间距离阈值，默认1.5
     kCoverageOcclusionThr : 0.2
     kCoverageDilationRadius : 0.25
 
