@@ -7,3 +7,7 @@ cd $SCRIPT_DIR
 ./src/base_autonomy/vehicle_simulator/mesh/unity/environment/Model.x86_64 &
 sleep 3 
 ros2 launch vehicle_simulator system_simulation_with_tare_planner.launch
+sleep 1
+ros2 run rviz2 rviz2 -d src/tare_planner/rviz/tare_planner_ground.rviz
+
+
