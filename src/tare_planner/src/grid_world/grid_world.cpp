@@ -740,8 +740,66 @@ exploration_path_ns::ExplorationPath GridWorld::SolveGlobalTSP(
   exploration_path_ns::ExplorationPath global_path;
   std::vector<geometry_msgs::msg::Point> exploring_cell_positions;
   std::vector<int> exploring_cell_indices;
+
+
+  // 在这里添加调试计数器
+  int total_cells = 0;
+  int exploring_cells = 0;
+  int covered_cells = 0;
+  int unseen_cells = 0;
+  int nogo_cells = 0;
+  int covered_by_others_cells = 0;
+  int neighbor_cells = 0;
+  int empty_viewpoints = 0;
+  int low_visits = 0;
+
+
   for (int i = 0; i < subspaces_->GetCellNumber(); i++)
   {
+    
+    // 添加状态统计
+    
+    total_cells++;
+    
+    // 添加状态统计
+    switch(subspaces_->GetCell(i).GetStatus()) {
+      case CellStatus::EXPLORING:
+        exploring_cells++;
+        
+        bool is_neighbor = std::find(neighbor_cell_indices_.begin(), neighbor_cell_indices_.end(), i) != neighbor_cell_indices_.end();
+        if (is_neighbor) {
+          neighbor_cells++;
+        }
+        
+        bool has_empty_viewpoints = subspaces_->GetCell(i).GetViewPointIndices().empty();
+        if (has_empty_viewpoints) {
+          empty_viewpoints++;
+        }
+        
+        bool has_low_visits = subspaces_->GetCell(i).GetVisitCount() <= 1;
+        if (has_low_visits) {
+          low_visits++;
+        }
+        break;
+      case CellStatus::COVERED:
+        covered_cells++;
+        break;
+      case CellStatus::UNSEEN:
+        unseen_cells++;
+        break;
+      case CellStatus::NOGO:
+        nogo_cells++;
+        break;
+      case CellStatus::COVERED_BY_OTHERS:
+        covered_by_others_cells++;
+        break;
+    }
+
+
+
+
+
+
     if (subspaces_->GetCell(i).GetStatus() == CellStatus::EXPLORING)
     {
       if (std::find(neighbor_cell_indices_.begin(), neighbor_cell_indices_.end(), i) == neighbor_cell_indices_.end() ||
@@ -801,6 +859,41 @@ exploration_path_ns::ExplorationPath GridWorld::SolveGlobalTSP(
   /****** Return home ******/
   if (exploring_cell_indices.empty())
   {
+    
+    // 打印出以下信息：
+    //   1、总 cell 数量
+    //   2、处于 EXPLORING 状态的 cell 数量
+    //   3、在邻近区域内的 cell 数量
+    //   4、没有视点的 cell 数量
+    //   5、访问次数小于等于 1 的 cell 数量
+
+    // 所以cell不被添加到exploring_cell_indices的情况是：
+    1、cell在邻近区域内 AND (有视点 OR 访问次数<=1)
+    2、exploring_cells 为 0，那就意味着没有任何 cell 处于 EXPLORING 状态
+
+
+    RCLCPP_INFO(rclcpp::get_logger("grid_world"),
+      "\nCell status distribution:"
+      "\n- Total cells: %d"
+      "\n- EXPLORING cells: %d"
+      "\n- COVERED cells: %d"
+      "\n- UNSEEN cells: %d"
+      "\n- NOGO cells: %d"
+      "\n- COVERED_BY_OTHERS cells: %d"
+      "\n\nExploring cells details:"
+      "\n- Neighbor cells: %d"
+      "\n- Cells with empty viewpoints: %d"
+      "\n- Cells with visits <= 1: %d"
+      "\n\nPossible reasons for empty exploring_cell_indices:"
+      "\n1. No exploring cells at all"
+      "\n2. All exploring cells are neighbors and have either:"
+      "\n   - Non-empty viewpoints, or"
+      "\n   - Empty viewpoints but visit count <= 1",
+      total_cells, exploring_cells, covered_cells, unseen_cells, 
+      nogo_cells, covered_by_others_cells,
+      neighbor_cells, empty_viewpoints, low_visits);
+  }
+
     return_home_ = true;
 
     geometry_msgs::msg::Point home_position;

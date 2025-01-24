@@ -144,157 +144,157 @@ void LocalCoveragePlanner::EnqueueViewpointCandidates(
 }
 
 void LocalCoveragePlanner::SelectViewPoint(
-    const std::vector<std::pair<int, int>> &queue,
-    const std::vector<bool> &covered,
-    std::vector<int> &selected_viewpoint_indices, bool use_frontier) {
-  if (use_frontier) {
-    if (queue.empty() || queue[0].first < parameters_.kMinAddFrontierPointNum) {
-      return;
+    const std::vector<std::pair<int, int>> &queue,  // 视点队列
+    const std::vector<bool> &covered,  // 已覆盖点的标记
+    std::vector<int> &selected_viewpoint_indices, bool use_frontier) {  // 已选择的视点索引和是否使用边界标记
+  if (use_frontier) {  // 如果使用边界
+    if (queue.empty() || queue[0].first < parameters_.kMinAddFrontierPointNum) {  // 如果队列为空或第一个视点覆盖的边界点数小于阈值
+      return;  // 返回
     }
-  } else {
-    if (queue.empty() || queue[0].first < parameters_.kMinAddPointNum) {
-      return;
+  } else {  // 如果不使用边界
+    if (queue.empty() || queue[0].first < parameters_.kMinAddPointNum) {  // 如果队列为空或第一个视点覆盖的点数小于阈值
+      return;  // 返回
     }
   }
 
-  std::vector<bool> covered_copy;
-  for (int i = 0; i < covered.size(); i++) {
-    covered_copy.push_back(covered[i]);
+  std::vector<bool> covered_copy;  // 创建已覆盖点标记的副本
+  for (int i = 0; i < covered.size(); i++) {  // 遍历已覆盖点标记
+    covered_copy.push_back(covered[i]);  // 复制标记
   }
-  std::vector<std::pair<int, int>> queue_copy;
-  for (int i = 0; i < queue.size(); i++) {
-    queue_copy.push_back(queue[i]);
+  std::vector<std::pair<int, int>> queue_copy;  // 创建队列的副本
+  for (int i = 0; i < queue.size(); i++) {  // 遍历队列
+    queue_copy.push_back(queue[i]);  // 复制队列元素
   }
 
-  int sample_range = 0;
-  for (int i = 0; i < queue_copy.size(); i++) {
-    if (use_frontier) {
-      if (queue_copy[i].first >= parameters_.kMinAddFrontierPointNum) {
-        sample_range++;
+  int sample_range = 0;  // 采样范围
+  for (int i = 0; i < queue_copy.size(); i++) {  // 遍历队列副本
+    if (use_frontier) {  // 如果使用边界
+      if (queue_copy[i].first >= parameters_.kMinAddFrontierPointNum) {  // 如果视点覆盖的边界点数大于等于阈值
+        sample_range++;  // 增加采样范围
       }
-    } else {
-      if (queue_copy[i].first >= parameters_.kMinAddPointNum) {
-        sample_range++;
+    } else {  // 如果不使用边界
+      if (queue_copy[i].first >= parameters_.kMinAddPointNum) {  // 如果视点覆盖的点数大于等于阈值
+        sample_range++;  // 增加采样范围
       }
     }
   }
 
-  sample_range =
-      std::min(parameters_.kGreedyViewPointSampleRange, sample_range);
-  std::random_device rd;
-  std::mt19937 gen(rd());
-  std::uniform_int_distribution<int> gen_next_queue_idx(0, sample_range - 1);
-  int queue_idx = gen_next_queue_idx(gen);
-  int cur_ind = queue_copy[queue_idx].second;
+  sample_range =  // 限制采样范围
+      std::min(parameters_.kGreedyViewPointSampleRange, sample_range);  // 取贪心采样范围和计算得到的范围的较小值
+  std::random_device rd;  // 随机数生成器
+  std::mt19937 gen(rd());  // Mersenne Twister伪随机数生成器
+  std::uniform_int_distribution<int> gen_next_queue_idx(0, sample_range - 1);  // 均匀分布的整数随机数生成器
+  int queue_idx = gen_next_queue_idx(gen);  // 生成随机队列索引
+  int cur_ind = queue_copy[queue_idx].second;  // 获取当前视点索引
 
-  while (true) {
-    int cur_array_ind = viewpoint_manager_->GetViewPointArrayInd(cur_ind);
-    if (use_frontier) {
-      for (const auto &point_ind :
+  while (true) {  // 循环选择视点
+    int cur_array_ind = viewpoint_manager_->GetViewPointArrayInd(cur_ind);  // 获取当前视点的数组索引
+    if (use_frontier) {  // 如果使用边界
+      for (const auto &point_ind :  // 遍历当前视点覆盖的边界点
            viewpoint_manager_->GetViewPointCoveredFrontierPointList(
-               cur_array_ind, true))
+               cur_array_ind, true))  // 获取视点覆盖的边界点列表
 
       {
-        MY_ASSERT(misc_utils_ns::InRange<bool>(covered_copy, point_ind));
-        if (!covered_copy[point_ind]) {
-          covered_copy[point_ind] = true;
+        MY_ASSERT(misc_utils_ns::InRange<bool>(covered_copy, point_ind));  // 断言点索引在范围内
+        if (!covered_copy[point_ind]) {  // 如果点未被覆盖
+          covered_copy[point_ind] = true;  // 标记为已覆盖
         }
       }
-    } else {
-      for (const auto &point_ind :
+    } else {  // 如果不使用边界
+      for (const auto &point_ind :  // 遍历当前视点覆盖的点
            viewpoint_manager_->GetViewPointCoveredPointList(cur_array_ind,
-                                                            true)) {
-        MY_ASSERT(misc_utils_ns::InRange<bool>(covered_copy, point_ind));
-        if (!covered_copy[point_ind]) {
-          covered_copy[point_ind] = true;
+                                                            true)) {  // 获取视点覆盖的点列表
+        MY_ASSERT(misc_utils_ns::InRange<bool>(covered_copy, point_ind));  // 断言点索引在范围内
+        if (!covered_copy[point_ind]) {  // 如果点未被覆盖
+          covered_copy[point_ind] = true;  // 标记为已覆盖
         }
       }
     }
-    selected_viewpoint_indices.push_back(cur_ind);
-    queue_copy.erase(queue_copy.begin() + queue_idx);
+    selected_viewpoint_indices.push_back(cur_ind);  // 将当前视点添加到已选择列表
+    queue_copy.erase(queue_copy.begin() + queue_idx);  // 从队列中删除当前视点
 
-    // Update the queue
-    for (int i = 0; i < queue_copy.size(); i++) {
-      int add_point_num = 0;
-      int ind = queue_copy[i].second;
-      int array_ind = viewpoint_manager_->GetViewPointArrayInd(ind);
-      if (use_frontier) {
-        for (const auto &point_ind :
+    // Update the queue  // 更新队列
+    for (int i = 0; i < queue_copy.size(); i++) {  // 遍历队列
+      int add_point_num = 0;  // 新增覆盖点数
+      int ind = queue_copy[i].second;  // 获取视点索引
+      int array_ind = viewpoint_manager_->GetViewPointArrayInd(ind);  // 获取视点数组索引
+      if (use_frontier) {  // 如果使用边界
+        for (const auto &point_ind :  // 遍历视点覆盖的边界点
              viewpoint_manager_->GetViewPointCoveredFrontierPointList(array_ind,
-                                                                      true)) {
-          MY_ASSERT(misc_utils_ns::InRange<bool>(covered_copy, point_ind));
-          if (!covered_copy[point_ind]) {
-            add_point_num++;
+                                                                      true)) {  // 获取视点覆盖的边界点列表
+          MY_ASSERT(misc_utils_ns::InRange<bool>(covered_copy, point_ind));  // 断言点索引在范围内
+          if (!covered_copy[point_ind]) {  // 如果点未被覆盖
+            add_point_num++;  // 增加新增覆盖点数
           }
         }
-      } else {
-        for (const auto &point_ind :
+      } else {  // 如果不使用边界
+        for (const auto &point_ind :  // 遍历视点覆盖的点
              viewpoint_manager_->GetViewPointCoveredPointList(array_ind,
-                                                              true)) {
-          MY_ASSERT(misc_utils_ns::InRange<bool>(covered_copy, point_ind));
-          if (!covered_copy[point_ind]) {
-            add_point_num++;
+                                                              true)) {  // 获取视点覆盖的点列表
+          MY_ASSERT(misc_utils_ns::InRange<bool>(covered_copy, point_ind));  // 断言点索引在范围内
+          if (!covered_copy[point_ind]) {  // 如果点未被覆盖
+            add_point_num++;  // 增加新增覆盖点数
           }
         }
       }
 
-      queue_copy[i].first = add_point_num;
+      queue_copy[i].first = add_point_num;  // 更新队列中视点的覆盖点数
     }
 
-    std::sort(queue_copy.begin(), queue_copy.end(), SortPairInRev);
+    std::sort(queue_copy.begin(), queue_copy.end(), SortPairInRev);  // 对队列按覆盖点数降序排序
 
-    if (queue_copy.empty() ||
-        queue_copy[0].first < parameters_.kMinAddPointNum) {
-      break;
+    if (queue_copy.empty() ||  // 如果队列为空
+        queue_copy[0].first < parameters_.kMinAddPointNum) {  // 或第一个视点覆盖的点数小于阈值
+      break;  // 退出循环
     }
-    if (use_frontier) {
-      if (queue_copy.empty() ||
-          queue_copy[0].first < parameters_.kMinAddFrontierPointNum) {
-        break;
+    if (use_frontier) {  // 如果使用边界
+      if (queue_copy.empty() ||  // 如果队列为空
+          queue_copy[0].first < parameters_.kMinAddFrontierPointNum) {  // 或第一个视点覆盖的边界点数小于阈值
+        break;  // 退出循环
       }
     }
 
-    // Randomly select the next point
-    int sample_range = 0;
-    for (int i = 0; i < queue.size(); i++) {
-      if (use_frontier) {
-        if (queue[i].first >= parameters_.kMinAddFrontierPointNum) {
-          sample_range++;
+    // Randomly select the next point  // 随机选择下一个点
+    int sample_range = 0;  // 采样范围
+    for (int i = 0; i < queue.size(); i++) {  // 遍历队列
+      if (use_frontier) {  // 如果使用边界
+        if (queue[i].first >= parameters_.kMinAddFrontierPointNum) {  // 如果视点覆盖的边界点数大于等于阈值
+          sample_range++;  // 增加采样范围
         }
-      } else {
-        if (queue[i].first >= parameters_.kMinAddPointNum) {
-          sample_range++;
+      } else {  // 如果不使用边界
+        if (queue[i].first >= parameters_.kMinAddPointNum) {  // 如果视点覆盖的点数大于等于阈值
+          sample_range++;  // 增加采样范围
         }
       }
     }
-    sample_range =
-        std::min(parameters_.kGreedyViewPointSampleRange, sample_range);
-    std::uniform_int_distribution<int> gen_next_queue_idx(0, sample_range - 1);
-    queue_idx = gen_next_queue_idx(gen);
-    cur_ind = queue_copy[queue_idx].second;
+    sample_range =  // 限制采样范围
+        std::min(parameters_.kGreedyViewPointSampleRange, sample_range);  // 取贪心采样范围和计算得到的范围的较小值
+    std::uniform_int_distribution<int> gen_next_queue_idx(0, sample_range - 1);  // 均匀分布的整数随机数生成器
+    queue_idx = gen_next_queue_idx(gen);  // 生成随机队列索引
+    cur_ind = queue_copy[queue_idx].second;  // 获取下一个视点索引
   }
 }
 
 void LocalCoveragePlanner::SelectViewPointFromFrontierQueue(
-    std::vector<std::pair<int, int>> &frontier_queue,
-    std::vector<bool> &frontier_covered,
-    std::vector<int> &selected_viewpoint_indices) {
+    std::vector<std::pair<int, int>> &frontier_queue,  // 边界队列
+    std::vector<bool> &frontier_covered,  // 边界点是否被覆盖的标记
+    std::vector<int> &selected_viewpoint_indices) {  // 已选择的视点索引
   if (use_frontier_ && !frontier_queue.empty() &&
-      frontier_queue[0].first > parameters_.kMinAddFrontierPointNum) {
+      frontier_queue[0].first > parameters_.kMinAddFrontierPointNum) {  // 如果使用边界且队列非空且第一个视点覆盖的边界点数超过阈值
     // Update the frontier queue
-    for (const auto &ind : selected_viewpoint_indices) {
-      UpdateViewPointCoveredFrontierPoint(frontier_covered, ind);
+    for (const auto &ind : selected_viewpoint_indices) {  // 遍历已选择的视点
+      UpdateViewPointCoveredFrontierPoint(frontier_covered, ind);  // 更新每个视点覆盖的边界点
     }
-    for (int i = 0; i < frontier_queue.size(); i++) {
-      int ind = frontier_queue[i].second;
+    for (int i = 0; i < frontier_queue.size(); i++) {  // 遍历边界队列
+      int ind = frontier_queue[i].second;  // 获取视点索引
       int covered_frontier_point_num =
           viewpoint_manager_->GetViewPointCoveredFrontierPointNum(
-              frontier_covered, ind);
-      frontier_queue[i].first = covered_frontier_point_num;
+              frontier_covered, ind);  // 获取视点覆盖的边界点数量
+      frontier_queue[i].first = covered_frontier_point_num;  // 更新队列中的覆盖点数
     }
-    std::sort(frontier_queue.begin(), frontier_queue.end(), SortPairInRev);
+    std::sort(frontier_queue.begin(), frontier_queue.end(), SortPairInRev);  // 按覆盖点数降序排序
     SelectViewPoint(frontier_queue, frontier_covered,
-                    selected_viewpoint_indices, true);
+                    selected_viewpoint_indices, true);  // 从边界队列中选择视点
   }
 }
 
@@ -636,82 +636,102 @@ LocalCoveragePlanner::SolveLocalCoverageProblem(
   viewpoint_sampling_timer.Stop(false, kRuntimeUnit);
   viewpoint_sampling_runtime_ +=
       viewpoint_sampling_timer.GetDuration(kRuntimeUnit);
-
-  std::vector<int> ordered_viewpoint_indices;
-  if (!queue.empty() && queue[0].first > parameters_.kMinAddPointNum) {
-    double min_path_length = DBL_MAX;
-    for (int itr = 0; itr < parameters_.kLocalPathOptimizationItrMax; itr++) {
-      std::vector<int> selected_viewpoint_indices_itr;
+  std::vector<int> ordered_viewpoint_indices;  // 存储有序的视点索引
+  if (!queue.empty() && queue[0].first > parameters_.kMinAddPointNum) {  // 如果队列不为空且第一个视点覆盖的点数超过最小阈值
+    double min_path_length = DBL_MAX;  // 初始化最小路径长度为最大值
+    for (int itr = 0; itr < parameters_.kLocalPathOptimizationItrMax; itr++) {  // 循环优化局部路径
+      std::vector<int> selected_viewpoint_indices_itr;  // 存储当前迭代选择的视点索引
 
       // Select from the queue
-      misc_utils_ns::Timer select_viewpoint_timer("select viewpoints");
-      select_viewpoint_timer.Start();
-      SelectViewPoint(queue, covered, selected_viewpoint_indices_itr, false);
-      SelectViewPointFromFrontierQueue(frontier_queue, frontier_covered,
+      misc_utils_ns::Timer select_viewpoint_timer("select viewpoints");  // 创建选择视点的计时器
+      select_viewpoint_timer.Start();  // 开始计时
+      SelectViewPoint(queue, covered, selected_viewpoint_indices_itr, false);  // 从队列中选择视点
+      SelectViewPointFromFrontierQueue(frontier_queue, frontier_covered,  // 从边界队列中选择视点
                                        selected_viewpoint_indices_itr);
 
       // Add viewpoints from last planning cycle
-      for (const auto &ind : reused_viewpoint_indices) {
-        selected_viewpoint_indices_itr.push_back(ind);
+      for (const auto &ind : reused_viewpoint_indices) {  // 添加上一个规划周期的视点
+        selected_viewpoint_indices_itr.push_back(ind);  // 将视点添加到当前选择列表
       }
+
+
+
       // Add viewpoints for navigation
-      for (const auto &ind : navigation_viewpoint_indices) {
-        selected_viewpoint_indices_itr.push_back(ind);
+      for (const auto &ind : navigation_viewpoint_indices) {  // 添加导航用的视点
+        selected_viewpoint_indices_itr.push_back(ind);  // 将导航视点添加到选择列表
       }
 
-      misc_utils_ns::UniquifyIntVector(selected_viewpoint_indices_itr);
+      misc_utils_ns::UniquifyIntVector(selected_viewpoint_indices_itr);  // 去除重复的视点索引
 
-      select_viewpoint_timer.Stop(false, kRuntimeUnit);
-      viewpoint_sampling_runtime_ +=
+      select_viewpoint_timer.Stop(false, kRuntimeUnit);  // 停止计时
+      viewpoint_sampling_runtime_ +=  // 累加视点采样运行时间
           select_viewpoint_timer.GetDuration(kRuntimeUnit);
 
       // Solve the TSP problem
-      exploration_path_ns::ExplorationPath local_path_itr;
-      local_path_itr =
+      exploration_path_ns::ExplorationPath local_path_itr;  // 创建局部路径对象
+      local_path_itr =  // 求解TSP问题获取路径
           SolveTSP(selected_viewpoint_indices_itr, ordered_viewpoint_indices);
 
-      double path_length = local_path_itr.GetLength();
-      if (!local_path_itr.nodes_.empty() && path_length < min_path_length)
+      double path_length = local_path_itr.GetLength();  // 获取路径长度
+      if (!local_path_itr.nodes_.empty() && path_length < min_path_length)  // 如果找到更短的有效路径
 
       {
-        min_path_length = path_length;
-        local_path = local_path_itr;
-        last_selected_viewpoint_indices_ = ordered_viewpoint_indices;
+        min_path_length = path_length;  // 更新最小路径长度
+        local_path = local_path_itr;  // 更新局部路径
+        last_selected_viewpoint_indices_ = ordered_viewpoint_indices;  // 更新最后选择的视点索引
       }
     }
-  } else {
-    misc_utils_ns::Timer select_viewpoint_timer("viewpoint sampling");
-    select_viewpoint_timer.Start();
+  } else {  // 如果队列为空或第一个视点覆盖点数不足
+
+    std::cout << "Entering else branch - queue empty or insufficient coverage" << std::endl;
+    if (queue.empty()) {
+        std::cout << "Queue为空" << std::endl;
+    } else {
+        std::cout << "第一个视点（最优的视点）的覆盖点数为: " << queue[0].first 
+                  << " (required: " << parameters_.kMinAddPointNum << ")" << std::endl;
+    }
+
+
+    misc_utils_ns::Timer select_viewpoint_timer("viewpoint sampling");  // 创建视点采样计时器
+    select_viewpoint_timer.Start();  // 开始计时
 
     // std::cout << "entering tsp routine" << std::endl;
-    std::vector<int> selected_viewpoint_indices_itr;
+    std::vector<int> selected_viewpoint_indices_itr;  // 存储选择的视点索引
 
     // Add viewpoints from last planning cycle
-    for (const auto &ind : reused_viewpoint_indices) {
-      selected_viewpoint_indices_itr.push_back(ind);
+    for (const auto &ind : reused_viewpoint_indices) {  // 添加上一个规划周期的视点
+      selected_viewpoint_indices_itr.push_back(ind);  // 将视点添加到选择列表
     }
-    SelectViewPointFromFrontierQueue(frontier_queue, frontier_covered,
+
+    std::cout << "添加上一个规划周期的视点后，视点列表大小为: " 
+      << selected_viewpoint_indices_itr.size() << " viewpoints" << std::endl;   // 调试代码
+
+    SelectViewPointFromFrontierQueue(frontier_queue, frontier_covered,  // 从边界队列中选择视点
                                      selected_viewpoint_indices_itr);
 
-    if (selected_viewpoint_indices_itr.empty()) {
-      local_coverage_complete_ = true;
+    std::cout << "从边界队列中选择视点后，视点列表大小为: " 
+              << selected_viewpoint_indices_itr.size() << " viewpoints" << std::endl  // 调试代码
+
+
+    if (selected_viewpoint_indices_itr.empty()) {  // 如果没有选择任何视点
+      local_coverage_complete_ = true;  // 标记局部覆盖完成
     }
 
     // Add viewpoints for navigation
-    for (const auto &ind : navigation_viewpoint_indices) {
-      selected_viewpoint_indices_itr.push_back(ind);
+    for (const auto &ind : navigation_viewpoint_indices) {  // 添加导航用的视点
+      selected_viewpoint_indices_itr.push_back(ind);  // 将导航视点添加到选择列表
     }
 
-    misc_utils_ns::UniquifyIntVector(selected_viewpoint_indices_itr);
+    misc_utils_ns::UniquifyIntVector(selected_viewpoint_indices_itr);  // 去除重复的视点索引
 
-    select_viewpoint_timer.Stop(false, kRuntimeUnit);
-    viewpoint_sampling_runtime_ +=
+    select_viewpoint_timer.Stop(false, kRuntimeUnit);  // 停止视点采样计时
+    viewpoint_sampling_runtime_ +=  // 累加视点采样运行时间
         select_viewpoint_timer.GetDuration(kRuntimeUnit);
 
-    local_path =
+    local_path =  // 求解TSP问题获取路径
         SolveTSP(selected_viewpoint_indices_itr, ordered_viewpoint_indices);
 
-    last_selected_viewpoint_indices_ = ordered_viewpoint_indices;
+    last_selected_viewpoint_indices_ = ordered_viewpoint_indices;  // 更新最后选择的视点索引
   }
 
   last_selected_viewpoint_array_indices_.clear();
