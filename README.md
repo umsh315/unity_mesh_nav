@@ -31,7 +31,8 @@
 
 ### 启动仿真环境
 #### 构建
-   colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
+colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
+
 
 #### 无可视图模式
    ./system_simulation.sh
@@ -39,6 +40,7 @@
 #### 有可视图模式
    ./system_simulation_with_route_planner.sh
    ./system_simulation_with_tare_planner.sh
+
 
    1、可视图控制：
    - 点击'Reset Visibility Graph'按钮：重新初始化可视图
@@ -134,18 +136,26 @@ L1激光雷达特点：
 
 
 
-# 单独测试point-lio slam
+# 保存slam的建图结果地图
 
 ## 改参数文件
-   修改utlidar.yaml文件中pcd_save_en参数
+   修改utlidar.yaml文件中pcd_save_en参数（目前是设为false）
 ## 编译
    colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release 
 ## 建图
    1、与go2建立通信
-   2、使用独立的launch文件，以下2个都可以
+
+   2、单独启动point-lio建图以下2个都可以
       ros2 launch vehicle_simulator system_real_robot_only_slam.launch
       ros2 launch point_lio_unilidar mapping_utlidar.launch 
+
+   3、结合自探索建图
+      ./system_real_robot_with_tare_planner.sh
+      ros2 launch tare_planner explore.launch
+
 ## 保存地图
    地图保存在PCD文件夹中，使用以下命令可以查看
    pcl_viewer scans.pcd 
+
+   下次建图时，将上次的文件删除
 

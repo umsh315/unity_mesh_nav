@@ -38,7 +38,7 @@ tare_planner_node:
     # PlanningEnv
     kUseFrontier : true
     kFrontierClusterTolerance : 0.5
-    kFrontierClusterMinSize : 5
+    kFrontierClusterMinSize : 5                     # 前沿簇数量，小房间要调小，默认值5
     kUseCoverageBoundaryOnFrontier : true
     kUseCoverageBoundaryOnObjectSurface : false
 
@@ -47,8 +47,8 @@ tare_planner_node:
     rolling_occupancy_grid/resolution_y : 0.2
     rolling_occupancy_grid/resolution_z : 0.2
 
-    kSurfaceCloudDwzLeafSize : 0.4
-    kCollisionCloudDwzLeafSize : 0.05
+    kSurfaceCloudDwzLeafSize : 0.4                  # 狭小空间可以适当减少，默认值0.4
+    kCollisionCloudDwzLeafSize : 0.05               
     kKeyposeGraphCollisionCheckRadius : 0.15
     kKeyposeGraphCollisionCheckPointNumThr : 1
     kKeyposeCloudStackNum : 5
@@ -72,16 +72,16 @@ tare_planner_node:
     keypose_graph/kAddEdgeCollisionCheckPointNumThr : 1
 
     # ViewPointManager
-    viewpoint_manager/number_x : 10            # x轴视点数量，默认值40
-    viewpoint_manager/number_y : 10
+    viewpoint_manager/number_x : 50            # x轴视点数量，默认值40
+    viewpoint_manager/number_y : 50
     viewpoint_manager/number_z : 1
-    viewpoint_manager/resolution_x : 0.15     # x轴视点分辨率,默认0.15
-    viewpoint_manager/resolution_y : 0.15
+    viewpoint_manager/resolution_x : 0.5      # x轴视点分辨率,默认0.15，（0.4时仿真有效）
+    viewpoint_manager/resolution_y : 0.5
     viewpoint_manager/resolution_z : 0.0
     kConnectivityHeightDiffThr : 0.25
     kGreedyViewPointSampleRange : 3
     kLocalPathOptimizationItrMax : 10
-    kViewPointCollisionMargin : 0.1
+    kViewPointCollisionMargin : 0.3            # 碰撞检测距离，值的2倍要大于分辨率，不然穿墙，默认值0.1，（0.25时仿真有效）
     kViewPointCollisionMarginZPlus : 0.25
     kViewPointCollisionMarginZMinus : 0.25
     kCollisionGridZScale : 1.0
@@ -95,7 +95,7 @@ tare_planner_node:
     kCheckDynamicObstacleCollision : false
     kCollisionFrameCountMax : 3
 
-    kSensorRange : 7.5                          # 传感器最大探测范围，默认3.0
+    kSensorRange : 3.0                          # 传感器最大探测范围，默认3.0
     kNeighborRange : 1.5                        # 相邻视点之间距离阈值，默认1.5
     kCoverageOcclusionThr : 0.2
     kCoverageDilationRadius : 0.25
@@ -104,7 +104,7 @@ tare_planner_node:
     kGridWorldXNum : 121
     kGridWorldYNum : 121
     kGridWorldZNum : 121
-    kGridWorldCellHeight : 3.0
+    kGridWorldCellHeight : 2.0                  # 占据地图的高，默认值3
     kGridWorldNearbyGridNum : 5
     kMinAddPointNumSmall : 8
     kMinAddPointNumBig : 16
