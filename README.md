@@ -94,7 +94,6 @@ colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
 
 
 ros2 launch far_planner far_planner.launch
-
 ros2 launch tare_planner explore.launch
 
 1、试一下用套件仿真时，话题订阅情况，关掉overmap,——要缩小了才能看到已探索区域，且在不同rviz上展示不同
