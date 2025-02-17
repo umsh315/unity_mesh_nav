@@ -77,6 +77,7 @@ colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
 #### 编译功能包
    colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
    colcon build --packages-select far_planner
+   colcon build --packages-select go2_h264_repub
 
 #### IMU校准
    source install/setup.bash
@@ -104,8 +105,10 @@ ros2 launch tare_planner explore.launch
    1. 在新的终端中：
       - 进入代码库文件夹
       - 使用下面的命令行
-   source install/setup.bash
-   ros2 run go2_h264_repub go2_h264_repub
+      2) source install/setup.bash
+      3) ros2 run go2_h264_repub go2_h264_repub --ros-args -p multicast_iface:=wlp0s20f3
+      (网口根据自己实际情况调整)
+      
 
    2. 相机驱动功能：
       - 接收H.264视频流

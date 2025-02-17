@@ -28,11 +28,14 @@ public:
                     ros_image->header.frame_id = "camera";
                     ros_image->header.stamp = this->get_clock()->now();
                     image_publisher_->publish(*ros_image);
+
+                    RCLCPP_INFO(this->get_logger(),"published image frame");
                     // std::cout << "pubed!" << std::endl;
                 }
                 cv::waitKey(10);
                 // rate.sleep();
             }
+            RCLCPP_INFO(this->get_logger(),"rclcpp not ok");
         }
     }
 
