@@ -76,6 +76,7 @@ colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
 
 #### 编译功能包
    colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
+   colcon build --packages-select far_planner
 
 #### IMU校准
    source install/setup.bash
