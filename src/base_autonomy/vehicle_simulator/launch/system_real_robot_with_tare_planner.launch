@@ -36,15 +36,15 @@
     <arg name="checkTerrainConn" value="$(var checkTerrainConn)"/>
   </include>
 
-  <!-- <include file="$(find-pkg-share sensor_scan_generation)/launch/sensor_scan_generation.launch" /> -->
+  <include file="$(find-pkg-share sensor_scan_generation)/launch/sensor_scan_generation.launch" />
 
   <!-- <include file="$(find-pkg-share visualization_tools)/launch/visualization_tools.launch" >
     <arg name="world_name" value="$(var world_name)"/>
   </include> -->
 
-  <!-- <include file="$(find-pkg-share tare_planner)/launch/explore.launch" /> -->
+  <include file="$(find-pkg-share tare_planner)/explore_world.launch" />
 
-  <node launch-prefix="nice" pkg="rviz2" exec="rviz2" name="rvizGA" args="-d $(find-pkg-share vehicle_simulator)/rviz/vehicle_simulator.rviz"/>
+  <!-- <node launch-prefix="nice" pkg="rviz2" exec="rviz2" name="rvizGA" args="-d $(find-pkg-share vehicle_simulator)/rviz/vehicle_simulator.rviz"/> -->
 
   <node pkg="tf2_ros" exec="static_transform_publisher" name="loamInterfaceTransPubMap" args="0 0 0 0 0 0 /map /camera_init"/>
 

@@ -39,7 +39,7 @@ colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
 
 #### 有可视图模式
    ./system_simulation_with_route_planner.sh
-   ./system_simulation_with_tare_planner.sh
+   ./system_simulation_with_exploration_planner.sh
 
 
    1、可视图控制：
@@ -78,6 +78,7 @@ colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
    colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
    colcon build --packages-select far_planner
    colcon build --packages-select go2_h264_repub
+   colcon build --packages-select tare_planner
 
 #### IMU校准
    source install/setup.bash
@@ -92,7 +93,7 @@ colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
 
    要使用路线规划器启动系统，请使用下面的命令行。
    ./system_real_robot_with_route_planner.sh
-   ./system_real_robot_with_tare_planner.sh
+   ./system_real_robot_with_exploration_planner.sh
 
 
 ros2 launch far_planner far_planner.launch

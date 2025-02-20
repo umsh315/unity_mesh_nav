@@ -64,6 +64,6 @@
 
   <!-- <node launch-prefix="nice" pkg="rviz2" exec="rviz2" name="rvizGA" args="-d $(find-pkg-share vehicle_simulator)/rviz/vehicle_simulator.rviz"/> -->
 
-  <include file="$(find-pkg-share tare_planner)/launch/explore_indoor_real.launch" />
+  <include file="$(find-pkg-share tare_planner)/explore_world.launch" />
 
 </launch>
