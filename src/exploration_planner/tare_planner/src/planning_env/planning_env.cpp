@@ -82,6 +82,7 @@ PlanningEnv::PlanningEnv(rclcpp::Node::SharedPtr nh, std::string world_frame_id)
 
   terrain_cloud_ = std::make_shared<pointcloud_utils_ns::PCLCloud<pcl::PointXYZI>>(nh, "terrain_cloud", world_frame_id);
 
+  // 创建一个共享指针，指向一个新的点云对象，用于存储规划点云
   planner_cloud_ =
       std::make_shared<pointcloud_utils_ns::PCLCloud<PlannerCloudPointType>>(nh, "planner_cloud", world_frame_id);
 
@@ -361,69 +362,83 @@ void PlanningEnv::GetUncoveredArea(const std::shared_ptr<viewpoint_manager_ns::V
     viewpoint_manager->ResetViewPointCoveredPointList(viewpoint_ind);
   }
 
-  // Get uncovered points
-  uncovered_cloud_->cloud_->clear();
-  uncovered_frontier_cloud_->cloud_->clear();
-  uncovered_point_num = 0;
-  uncovered_frontier_point_num = 0;
-  for (int i = 0; i < planner_cloud_->cloud_->points.size(); i++)
+
+  uncovered_cloud_->cloud_->clear(); // 清空未覆盖点云
+  uncovered_frontier_cloud_->cloud_->clear(); // 清空未覆盖前沿点云
+  uncovered_point_num = 0; // 初始化未覆盖点数量为0
+  uncovered_frontier_point_num = 0; // 初始化未覆盖前沿点数量为0
+
+  // 检查未覆盖的点
+  int g_greater_than_zero_count = 0; // 记录g值大于0的点的数量
+
+  for (int i = 0; i < planner_cloud_->cloud_->points.size(); i++) // 遍历规划点云中的每个点
   {
-    PlannerCloudPointType point = planner_cloud_->cloud_->points[i];
-    if (point.g > 0)
+    PlannerCloudPointType point = planner_cloud_->cloud_->points[i]; // 获取当前点
+    
+    if (point.g > 0) // 如果点的g值大于0
     {
-      continue;
+      g_greater_than_zero_count++; // 计数加1
+      continue; // 跳过该点
     }
-    bool observed = false;
-    for (const auto& viewpoint_ind : viewpoint_manager->candidate_indices_)
+    bool observed = false; // 标记当前点是否被观察到
+    for (const auto& viewpoint_ind : viewpoint_manager->candidate_indices_) // 遍历视点管理器中的候选视点索引
     {
-      if (!viewpoint_manager->ViewPointVisited(viewpoint_ind))
+      if (!viewpoint_manager->ViewPointVisited(viewpoint_ind)) // 检查视点是否未被访问
       {
-        if (viewpoint_manager->VisibleByViewPoint<PlannerCloudPointType>(point, viewpoint_ind))
+        if (viewpoint_manager->VisibleByViewPoint<PlannerCloudPointType>(point, viewpoint_ind)) // 检查当前点是否被该视点可见
         {
-          viewpoint_manager->AddUncoveredPoint(viewpoint_ind, uncovered_point_num);
-          observed = true;
+          viewpoint_manager->AddUncoveredPoint(viewpoint_ind, uncovered_point_num); // 将未覆盖的点添加到视点管理器中
+          observed = true; // 标记为已观察
         }
       }
     }
-    if (observed)
+    if (observed) // 如果当前点被观察到
     {
-      pcl::PointXYZI uncovered_point;
-      uncovered_point.x = point.x;
-      uncovered_point.y = point.y;
-      uncovered_point.z = point.z;
-      uncovered_point.intensity = i;
-      uncovered_cloud_->cloud_->points.push_back(uncovered_point);
-      uncovered_point_num++;
+      pcl::PointXYZI uncovered_point; // 创建未覆盖点
+      uncovered_point.x = point.x; // 设置x坐标
+      uncovered_point.y = point.y; // 设置y坐标
+      uncovered_point.z = point.z; // 设置z坐标
+      uncovered_point.intensity = i; // 设置强度
+      uncovered_cloud_->cloud_->points.push_back(uncovered_point); // 将未覆盖点添加到点云中
+      uncovered_point_num++; // 增加未覆盖点的数量
     }
   }
+  RCLCPP_INFO(rclcpp::get_logger("planning_env"), "点云中g值大于0的点数量: %d，添加到视点管理器点的普通点数量: %d，总共点云数量: %d", g_greater_than_zero_count, uncovered_point_num, planner_cloud_->cloud_->points.size());
 
-  // Check uncovered frontiers
+
+  // 检查未覆盖的前沿点
   if (parameters_.kUseFrontier)
   {
+    // 遍历过滤后的前沿点云中的每个点
     for (int i = 0; i < filtered_frontier_cloud_->cloud_->points.size(); i++)
     {
-      pcl::PointXYZI point = filtered_frontier_cloud_->cloud_->points[i];
-      bool observed = false;
+      pcl::PointXYZI point = filtered_frontier_cloud_->cloud_->points[i]; // 获取当前点
+      bool observed = false; // 标记当前点是否被观察到
+      // 遍历视点管理器中的候选视点索引
       for (const auto& viewpoint_ind : viewpoint_manager->candidate_indices_)
       {
+        // 检查视点是否未被访问
         if (!viewpoint_manager->ViewPointVisited(viewpoint_ind))
         {
+          // 检查当前点是否被该视点可见
           if (viewpoint_manager->VisibleByViewPoint<pcl::PointXYZI>(point, viewpoint_ind))
           {
+            // 将未覆盖的前沿点添加到视点管理器中
             viewpoint_manager->AddUncoveredFrontierPoint(viewpoint_ind, uncovered_frontier_point_num);
-            observed = true;
+            observed = true; // 标记为已观察
           }
         }
       }
+      // 如果当前点被观察到
       if (observed)
       {
-        pcl::PointXYZI uncovered_frontier_point;
-        uncovered_frontier_point.x = point.x;
-        uncovered_frontier_point.y = point.y;
-        uncovered_frontier_point.z = point.z;
-        uncovered_frontier_point.intensity = i;
-        uncovered_frontier_cloud_->cloud_->points.push_back(uncovered_frontier_point);
-        uncovered_frontier_point_num++;
+        pcl::PointXYZI uncovered_frontier_point; // 创建未覆盖的前沿点
+        uncovered_frontier_point.x = point.x; // 设置x坐标
+        uncovered_frontier_point.y = point.y; // 设置y坐标
+        uncovered_frontier_point.z = point.z; // 设置z坐标
+        uncovered_frontier_point.intensity = i; // 设置强度
+        uncovered_frontier_cloud_->cloud_->points.push_back(uncovered_frontier_point); // 将未覆盖的前沿点添加到点云中
+        uncovered_frontier_point_num++; // 增加未覆盖前沿点的数量
       }
     }
   }

@@ -285,10 +285,21 @@ void PointCloudManager::UpdateCoveredCloudPoints()
     int point_num = pointcloud_grid_->GetCell(i)->points.size();
     for (int j = 0; j < point_num; ++j)
     {
+      // uint8_t g = pointcloud_grid_->GetCell(i)->points[j].g;  // 正确获取g通道值
+      // // if (g < 255)
+      // // {
+      // //   std::cout << "当前" << i << "行," << j << "列点的g值: " << static_cast<int>(g) << std::endl;
+      // // }
+      // if (g > 0)
+      // {
+      //   pointcloud_grid_->GetCell(i)->points[j].g = 255;
+      // }
+
       if (pointcloud_grid_->GetCell(i)->points[j].g > 0)
       {
         pointcloud_grid_->GetCell(i)->points[j].g = 255;
       }
+
     }
   }
 }

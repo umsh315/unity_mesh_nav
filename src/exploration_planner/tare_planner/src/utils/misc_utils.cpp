@@ -739,37 +739,50 @@ bool InFOV(const Eigen::Vector3d& point_position, const Eigen::Vector3d& viewpoi
   return theta >= vertical_fov_min && theta <= vertical_fov_max;
 }
 
+// 检查点是否在视点的视野范围内的简单实现
 bool InFOVSimple(const Eigen::Vector3d& point_position, const Eigen::Vector3d& viewpoint_position,
                  double vertical_fov_ratio, double range, double xy_dist_threshold, double z_diff_threshold, bool print)
 {
+  // 计算点与视点之间的差值
   Eigen::Vector3d diff = point_position - viewpoint_position;
+  // 计算点在xy平面上的距离
   double xy_dist = sqrt(diff.x() * diff.x() + diff.y() * diff.y());
+  
+  // 如果xy距离小于阈值且z差值小于阈值
   if (xy_dist < xy_dist_threshold && std::abs(diff.z()) < z_diff_threshold)
   {
+    // 如果需要打印信息
     if (print)
     {
-      std::cout << "nearby point approximation" << std::endl;
+      std::cout << "nearby point approximation" << std::endl; // 打印附近点的近似信息
     }
-    return true;
+    return true; // 返回可见
   }
+  
+  // 如果xy距离大于范围
   if (xy_dist > range)
   {
+    // 如果需要打印信息
     if (print)
     {
-      std::cout << "xy_dist: " << xy_dist << " > range: " << range << std::endl;
+      std::cout << "xy_dist: " << xy_dist << " > range: " << range << std::endl; // 打印距离超出范围的信息
     }
-    return false;
+    return false; // 返回不可见
   }
+  
+  // 如果z差值大于垂直视场比率乘以xy距离
   if (std::abs(diff.z()) > vertical_fov_ratio * xy_dist)
   {
+    // 如果需要打印信息
     if (print)
     {
       std::cout << "diff z: " << std::abs(diff.z()) << " > threshold : " << vertical_fov_ratio << " * " << xy_dist
-                << " = " << vertical_fov_ratio * xy_dist << std::endl;
+                << " = " << vertical_fov_ratio * xy_dist << std::endl; // 打印z差值超出阈值的信息
     }
-    return false;
+    return false; // 返回不可见
   }
-  return true;
+  
+  return true; // 返回可见
 }
 
 float ApproxAtan(float z)

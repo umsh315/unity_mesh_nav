@@ -503,45 +503,54 @@ void SensorCoveragePlanner3D::StateEstimationCallback(
 }
 
 void SensorCoveragePlanner3D::RegisteredScanCallback(
-    const sensor_msgs::msg::PointCloud2::ConstSharedPtr registered_scan_msg) {
-  if (!initialized_) {
-    return;
+    const sensor_msgs::msg::PointCloud2::ConstSharedPtr registered_scan_msg) { // 注册扫描回调函数
+  if (!initialized_) { // 如果未初始化
+    return; // 返回
   }
-  pcl::PointCloud<pcl::PointXYZ>::Ptr registered_scan_tmp(
+  pcl::PointCloud<pcl::PointXYZ>::Ptr registered_scan_tmp( // 创建一个新的点云对象
       new pcl::PointCloud<pcl::PointXYZ>());
-  pcl::fromROSMsg(*registered_scan_msg, *registered_scan_tmp);
-  if (registered_scan_tmp->points.empty()) {
-    return;
+  pcl::fromROSMsg(*registered_scan_msg, *registered_scan_tmp); // 从ROS消息转换为点云
+  if (registered_scan_tmp->points.empty()) { // 如果点云为空
+    return; // 返回
   }
-  *(registered_scan_stack_->cloud_) += *(registered_scan_tmp);
-  pointcloud_downsizer_.Downsize(
+  *(registered_scan_stack_->cloud_) += *(registered_scan_tmp); // 将新扫描的点云添加到注册扫描堆栈
+  pointcloud_downsizer_.Downsize( // 对点云进行下采样
       registered_scan_tmp, kKeyposeCloudDwzFilterLeafSize,
       kKeyposeCloudDwzFilterLeafSize, kKeyposeCloudDwzFilterLeafSize);
-  registered_cloud_->cloud_->clear();
-  pcl::copyPointCloud(*registered_scan_tmp, *(registered_cloud_->cloud_));
+  registered_cloud_->cloud_->clear(); // 清空注册的点云
+  pcl::copyPointCloud(*registered_scan_tmp, *(registered_cloud_->cloud_)); // 复制点云到注册的点云
 
-  planning_env_->UpdateRobotPosition(robot_position_);
-  planning_env_->UpdateRegisteredCloud<pcl::PointXYZI>(
+  planning_env_->UpdateRobotPosition(robot_position_); // 更新机器人的位置
+  planning_env_->UpdateRegisteredCloud<pcl::PointXYZI>( // 更新注册的点云
       registered_cloud_->cloud_);
 
-  registered_cloud_count_ = (registered_cloud_count_ + 1) % 5;
-  if (registered_cloud_count_ == 0) {
-    // initialized_ = true;
-    keypose_.pose.pose.position = robot_position_;
-    keypose_.pose.covariance[0] = keypose_count_++;
-    cur_keypose_node_ind_ =
+  registered_cloud_count_ = (registered_cloud_count_ + 1) % 5; // 更新注册的点云计数
+  if (registered_cloud_count_ == 0) { // 如果计数为0
+    // initialized_ = true; // 初始化标志
+    keypose_.pose.pose.position = robot_position_; // 设置关键姿态的位置
+    keypose_.pose.covariance[0] = keypose_count_++; // 更新关键姿态的协方差
+    cur_keypose_node_ind_ = // 添加关键姿态节点到图中
         keypose_graph_->AddKeyposeNode(keypose_, *(planning_env_));
 
-    pointcloud_downsizer_.Downsize(
+    pointcloud_downsizer_.Downsize( // 对注册扫描堆栈的点云进行降采样
         registered_scan_stack_->cloud_, kKeyposeCloudDwzFilterLeafSize,
         kKeyposeCloudDwzFilterLeafSize, kKeyposeCloudDwzFilterLeafSize);
 
-    keypose_cloud_->cloud_->clear();
-    pcl::copyPointCloud(*(registered_scan_stack_->cloud_),
+    keypose_cloud_->cloud_->clear(); // 清空关键姿态点云
+    pcl::copyPointCloud(*(registered_scan_stack_->cloud_), // 复制点云到关键姿态点云
                         *(keypose_cloud_->cloud_));
-    // keypose_cloud_->Publish();
-    registered_scan_stack_->cloud_->clear();
-    keypose_cloud_update_ = true;
+
+    // // 打印关键姿态点云的g值
+    // for (size_t i = 0; i < keypose_cloud_->cloud_->points.size(); ++i) {
+    //     std::cout << "keypose_cloud_.cloud_.points[" << i << "].g: " 
+    //               << keypose_cloud_->cloud_->points[i].g << std::endl;
+    // }
+
+
+
+    // keypose_cloud_->Publish(); // 发布关键姿态点云
+    registered_scan_stack_->cloud_->clear(); // 清空注册扫描堆栈
+    keypose_cloud_update_ = true; // 更新关键姿态点云标志
   }
 }
 
@@ -839,6 +848,8 @@ void SensorCoveragePlanner3D::UpdateGlobalRepresentation() {
   if (exploration_finished_ && kNoExplorationReturnHome) {
     planning_env_->SetUseFrontier(false);
   }
+
+
   planning_env_->UpdateKeyposeCloud<PlannerCloudPointType>(
       keypose_cloud_->cloud_);
 
@@ -946,17 +957,25 @@ void SensorCoveragePlanner3D::PublishGlobalPlanningVisualization(
   // planning_env_->PublishStackedCloud();
 }
 
+// 本函数用于进行局部规划
 void SensorCoveragePlanner3D::LocalPlanning(
     int uncovered_point_num, int uncovered_frontier_point_num,
     const exploration_path_ns::ExplorationPath &global_path,
     exploration_path_ns::ExplorationPath &local_path) {
+  // 创建计时器以测量局部规划的时间
   misc_utils_ns::Timer local_tsp_timer("Local planning");
   local_tsp_timer.Start();
+  
+  // 如果需要更新前瞻点，则设置前瞻点
   if (lookahead_point_update_) {
     local_coverage_planner_->SetLookAheadPoint(lookahead_point_);
   }
+  
+  // 解决局部覆盖问题并获取局部路径
   local_path = local_coverage_planner_->SolveLocalCoverageProblem(
       global_path, uncovered_point_num, uncovered_frontier_point_num);
+  
+  // 停止计时器
   local_tsp_timer.Stop(false);
 }
 

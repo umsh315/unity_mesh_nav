@@ -31,9 +31,9 @@ namespace pointcloud_manager_ns
 class PointCloudManager
 {
 public:
-  typedef pcl::PointXYZRGBNormal PCLPointType;
-  typedef pcl::PointCloud<pcl::PointXYZRGBNormal> PCLCloudType;
-  typedef typename pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr PCLCloudTypePtr;
+  typedef pcl::PointXYZRGBNormal PCLPointType;    //定义单个点的别名
+  typedef pcl::PointCloud<pcl::PointXYZRGBNormal> PCLCloudType;   //定义该类点的集合（点云）的别名
+  typedef typename pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr PCLCloudTypePtr; //定义该类点的集合（点云）的指针
 
   explicit PointCloudManager(int row_num = 20, int col_num = 20, int level_num = 10, int max_cell_point_num = 100000,
                              double cell_size = 24, double cell_height = 3, int neighbor_cell_num = 5);

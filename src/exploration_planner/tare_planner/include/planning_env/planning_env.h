@@ -148,98 +148,127 @@ public:
   }
 
   template <class PCLPointType>
+  // 更新关键姿态点云
   void UpdateKeyposeCloud(typename pcl::PointCloud<PCLPointType>::Ptr& keypose_cloud)
   {
+    // 检查关键姿态点云是否为空
     if (keypose_cloud->points.empty())
     {
+      // 记录警告信息：关键姿态点云为空
       RCLCPP_WARN(rclcpp::get_logger("standalone_logger"), "PlanningEnv::UpdateKeyposeCloud(): keypose cloud empty");
-      return;
+      return; // 退出函数
     }
     else
     {
+      // 复制关键姿态点云到内部云
       pcl::copyPointCloud<PCLPointType, PlannerCloudPointType>(*keypose_cloud, *(keypose_cloud_->cloud_));
 
+      // 如果使用覆盖边界在物体表面
       if (parameters_.kUseCoverageBoundaryOnObjectSurface)
       {
+        // 获取边界内的覆盖云
         GetCoverageCloudWithinBoundary<PlannerCloudPointType>(keypose_cloud_->cloud_);
       }
 
-      // Extract surface of interest
+      // 提取感兴趣的表面
       misc_utils_ns::Timer get_surface_timer("get coverage and diff cloud");
-      get_surface_timer.Start();
-      vertical_surface_cloud_->cloud_->clear();
+      get_surface_timer.Start(); // 启动计时器
+      vertical_surface_cloud_->cloud_->clear(); // 清空垂直表面云
 
+      // 提取垂直表面
       vertical_surface_extractor_.ExtractVerticalSurface<PlannerCloudPointType, PlannerCloudPointType>(
           keypose_cloud_->cloud_, vertical_surface_cloud_->cloud_);
-      // vertical_surface_cloud_->Publish();
+      // vertical_surface_cloud_->Publish(); // 发布垂直表面云
 
+      // 更新旧的点云
       pointcloud_manager_->UpdateOldCloudPoints();
+      // 更新点云
       pointcloud_manager_->UpdatePointCloud<PlannerCloudPointType>(*(vertical_surface_cloud_->cloud_));
+      // 更新覆盖的点云
       pointcloud_manager_->UpdateCoveredCloudPoints();
 
+      // 清空规划云
       planner_cloud_->cloud_->clear();
+      // 获取点云
       pointcloud_manager_->GetPointCloud(*(planner_cloud_->cloud_));
-      planner_cloud_->Publish();
+      planner_cloud_->Publish(); // 发布规划云
 
-      // Get the diff cloud
-      diff_cloud_->cloud_->clear();
+      // 获取差异云
+      diff_cloud_->cloud_->clear(); // 清空差异云
+      // 将关键姿态点云的颜色设置为黑色
       for (auto& point : keypose_cloud_->cloud_->points)
       {
         point.r = 0;
         point.g = 0;
         point.b = 0;
       }
+      // 将堆叠云的颜色设置为白色
       for (auto& point : stacked_cloud_->cloud_->points)
       {
         point.r = 255;
       }
+      // 将关键姿态点云添加到堆叠云中
       *(stacked_cloud_->cloud_) += *(keypose_cloud_->cloud_);
+      // 对堆叠云进行下采样
       stacked_cloud_downsizer_.Downsize(stacked_cloud_->cloud_, parameters_.kSurfaceCloudDwzLeafSize,
                                         parameters_.kSurfaceCloudDwzLeafSize, parameters_.kSurfaceCloudDwzLeafSize);
+      // 检查堆叠云中的点
       for (const auto& point : stacked_cloud_->cloud_->points)
       {
-        if (point.r < 40)  // TODO: computed from the keypose cloud resolution and stacked cloud resolution
+        // 如果点的红色分量小于40
+        if (point.r < 40)  // TODO: 根据关键姿态云分辨率和堆叠云分辨率计算
         {
+          // 将点添加到差异云中
           diff_cloud_->cloud_->points.push_back(point);
         }
       }
-      diff_cloud_->Publish();
-      get_surface_timer.Stop(false);
+      diff_cloud_->Publish(); // 发布差异云
+      get_surface_timer.Stop(false); // 停止计时器
 
-      // Stack together
-      keypose_cloud_stack_[keypose_cloud_count_]->clear();
-      *keypose_cloud_stack_[keypose_cloud_count_] = *keypose_cloud_->cloud_;
-      keypose_cloud_count_ = (keypose_cloud_count_ + 1) % parameters_.kKeyposeCloudStackNum;
-      stacked_cloud_->cloud_->clear();
+      // 堆叠在一起
+      keypose_cloud_stack_[keypose_cloud_count_]->clear(); // 清空当前关键姿态云堆栈
+      *keypose_cloud_stack_[keypose_cloud_count_] = *keypose_cloud_->cloud_; // 将当前关键姿态云添加到堆栈
+      keypose_cloud_count_ = (keypose_cloud_count_ + 1) % parameters_.kKeyposeCloudStackNum; // 更新计数
+      stacked_cloud_->cloud_->clear(); // 清空堆叠云
+      // 将所有关键姿态云堆叠在一起
       for (int i = 0; i < parameters_.kKeyposeCloudStackNum; i++)
       {
         *(stacked_cloud_->cloud_) += *keypose_cloud_stack_[i];
       }
+      // 对堆叠云进行下采样
       stacked_cloud_downsizer_.Downsize(stacked_cloud_->cloud_, parameters_.kSurfaceCloudDwzLeafSize,
                                         parameters_.kSurfaceCloudDwzLeafSize, parameters_.kSurfaceCloudDwzLeafSize);
 
+      // 清空垂直表面云堆栈
       vertical_surface_cloud_stack_[keypose_cloud_count_]->clear();
-      *vertical_surface_cloud_stack_[keypose_cloud_count_] = *(vertical_surface_cloud_->cloud_);
-      keypose_cloud_count_ = (keypose_cloud_count_ + 1) % parameters_.kKeyposeCloudStackNum;
-      stacked_vertical_surface_cloud_->cloud_->clear();
+      *vertical_surface_cloud_stack_[keypose_cloud_count_] = *(vertical_surface_cloud_->cloud_); // 将当前垂直表面云添加到堆栈
+      keypose_cloud_count_ = (keypose_cloud_count_ + 1) % parameters_.kKeyposeCloudStackNum; // 更新计数
+      stacked_vertical_surface_cloud_->cloud_->clear(); // 清空堆叠垂直表面云
+      // 将所有垂直表面云堆叠在一起
       for (int i = 0; i < parameters_.kKeyposeCloudStackNum; i++)
       {
         *(stacked_vertical_surface_cloud_->cloud_) += *vertical_surface_cloud_stack_[i];
       }
 
+      // 对堆叠垂直表面云进行下采样
       stacked_cloud_downsizer_.Downsize(stacked_vertical_surface_cloud_->cloud_, parameters_.kSurfaceCloudDwzLeafSize,
                                         parameters_.kSurfaceCloudDwzLeafSize, parameters_.kSurfaceCloudDwzLeafSize);
 
+      // 如果堆叠垂直表面云不为空
       if (!stacked_vertical_surface_cloud_->cloud_->points.empty())
       {
+        // 设置KD树输入云
         stacked_vertical_surface_cloud_kdtree_->setInputCloud(stacked_vertical_surface_cloud_->cloud_);
       }
 
-      UpdateCollisionCloud();
+      UpdateCollisionCloud(); // 更新碰撞云
 
-      UpdateFrontiers();
+      UpdateFrontiers(); // 更新前沿
     }
   }
+
+
+  
   inline void UpdateCoverageBoundary(const geometry_msgs::msg::Polygon& polygon)
   {
     coverage_boundary_ = polygon;

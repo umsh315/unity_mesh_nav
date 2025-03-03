@@ -23,8 +23,8 @@ tare_planner_node:
     kExtendWayPoint : true
     kUseLineOfSightLookAheadPoint : true
     kNoExplorationReturnHome : true
-    kExtendWayPointDistanceBig : 8.0              # 原值8.0 超过雷达距离一点
-    kExtendWayPointDistanceSmall : 3.5            # 原值3.5 和雷达距离一致
+    kExtendWayPointDistanceBig : 3.0              # 原值8.0 超过雷达距离一点
+    kExtendWayPointDistanceSmall : 2.0            # 原值3.5 和雷达距离一致
     kKeyposeCloudDwzFilterLeafSize : 0.2
     kRushHomeDist : 5.0
     kAtHomeDistThreshold : 0.5
@@ -70,8 +70,8 @@ tare_planner_node:
     keypose_graph/kAddEdgeCollisionCheckPointNumThr : 1
 
     # ViewPointManager
-    viewpoint_manager/number_x : 200                # 原值50，大一点，让边界点都落在绿色框范围内
-    viewpoint_manager/number_y : 200
+    viewpoint_manager/number_x : 80                # 原值50
+    viewpoint_manager/number_y : 80
     viewpoint_manager/number_z : 1
     viewpoint_manager/resolution_x : 0.15          # 分辨率 原值0.4,值越大 horizen绿框边长越大
     viewpoint_manager/resolution_y : 0.15
@@ -93,7 +93,7 @@ tare_planner_node:
     kCheckDynamicObstacleCollision : false
     kCollisionFrameCountMax : 3
 
-    kSensorRange : 3.5                  # 激光点云覆盖的举例,原值3.5
+    kSensorRange : 2.0                  # 激光点云覆盖的举例,原值3.5
     kNeighborRange : 1.5                # 默认值 3.0  这个决定小方块大小
     kCoverageOcclusionThr : 0.3
     kCoverageDilationRadius : 0.5
@@ -104,7 +104,7 @@ tare_planner_node:
     kGridWorldZNum : 121
     kGridWorldCellHeight : 3.0
     kGridWorldNearbyGridNum : 5
-    kMinAddPointNumSmall : 3             # 视点最小覆盖的点数量 ,原值30
+    kMinAddPointNumSmall : 1             # 视点最小覆盖的点数量 ,原值30
     kMinAddPointNumBig : 50
     kMinAddFrontierPointNum : 1          # 视点最小覆盖的前沿点数量,原值10
     kCellExploringToCoveredThr : 1

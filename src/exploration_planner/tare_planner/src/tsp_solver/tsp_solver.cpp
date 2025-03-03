@@ -4,30 +4,34 @@
 
 #include "../../include/tsp_solver/tsp_solver.h"
 
+// 定义 tsp_solver_ns 命名空间
 namespace tsp_solver_ns {
+// 构造函数，初始化数据模型
 TSPSolver::TSPSolver(tsp_solver_ns::DataModel data)
     : data_(std::move(data)),
       manager_(data_.distance_matrix.size(), data_.num_vehicles, data_.depot),
       routing_(manager_) {}
 
+// 求解 TSP 问题
 void TSPSolver::Solve() {
+  // 注册过渡回调函数
   const int transit_callback_index = routing_.RegisterTransitCallback(
       [this](int64_t from_index, int64_t to_index) -> int64_t {
-        // Convert from routing variable Index to distance matrix NodeIndex.
+        // 将路由变量索引转换为距离矩阵节点索引
         auto from_node = manager_.IndexToNode(from_index).value();
         auto to_node = manager_.IndexToNode(to_index).value();
         return data_.distance_matrix[from_node][to_node];
       });
 
-  // Define cost of each arc.
+  // 定义每条弧的成本
   routing_.SetArcCostEvaluatorOfAllVehicles(transit_callback_index);
 
-  // Setting first solution heuristic.
+  // 设置初始解的启发式方法
   RoutingSearchParameters searchParameters = DefaultRoutingSearchParameters();
   searchParameters.set_first_solution_strategy(
       FirstSolutionStrategy::PATH_CHEAPEST_ARC);
 
-  // Solve the problem.
+  // 求解问题
   solution_ = routing_.SolveWithParameters(searchParameters);
 }
 

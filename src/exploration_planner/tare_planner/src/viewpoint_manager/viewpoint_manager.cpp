@@ -346,10 +346,11 @@ void ViewPointManager::UpdateOrigin()
   }
 }
 
+// 获取视点数组索引
 int ViewPointManager::GetViewPointArrayInd(int viewpoint_ind, bool use_array_ind) const
 {
-  MY_ASSERT(grid_->InRange(viewpoint_ind));
-  return (use_array_ind ? viewpoint_ind : grid_->GetArrayInd(viewpoint_ind));
+  MY_ASSERT(grid_->InRange(viewpoint_ind)); // 确保视点索引在范围内
+  return (use_array_ind ? viewpoint_ind : grid_->GetArrayInd(viewpoint_ind)); // 根据是否使用数组索引返回相应的索引
 }
 
 int ViewPointManager::GetViewPointInd(int viewpoint_array_ind) const
@@ -1015,9 +1016,12 @@ void ViewPointManager::SetViewPointVisited(int viewpoint_ind, bool visited, bool
   viewpoints_[array_ind].SetVisited(visited);
 }
 // Selected
+// 检查视点是否被选中
 bool ViewPointManager::ViewPointSelected(int viewpoint_ind, bool use_array_ind)
 {
+  // 获取视点的数组索引
   int array_ind = GetViewPointArrayInd(viewpoint_ind, use_array_ind);
+  // 返回该视点是否被选中
   return viewpoints_[array_ind].Selected();
 }
 void ViewPointManager::SetViewPointSelected(int viewpoint_ind, bool selected, bool use_array_ind)
@@ -1154,25 +1158,28 @@ int ViewPointManager::GetViewPointCoveredPointNum(int viewpoint_ind, bool use_ar
   return viewpoints_[array_ind].GetCoveredPointNum();
 }
 
-int ViewPointManager::GetViewPointCoveredFrontierPointNum(int viewpoint_ind, bool use_array_ind)
+// 获取视点覆盖的边界点数量
+int ViewPointManager::GetViewPointCoveredFrontierPointNum(int viewpoint_ind, bool use_array_ind) // 定义函数，获取视点覆盖的边界点数量
 {
-  int array_ind = GetViewPointArrayInd(viewpoint_ind, use_array_ind);
-  return viewpoints_[array_ind].GetCoveredFrontierPointNum();
+  int array_ind = GetViewPointArrayInd(viewpoint_ind, use_array_ind); // 获取视点数组索引
+  return viewpoints_[array_ind].GetCoveredFrontierPointNum(); // 返回对应视点的覆盖边界点数量
 }
 
+// 获取视点覆盖的点数量
 int ViewPointManager::GetViewPointCoveredPointNum(const std::vector<bool>& point_list, int viewpoint_index,
                                                   bool use_array_ind)
 {
-  int covered_point_num = 0;
+  int covered_point_num = 0; // 初始化覆盖点数量
+  // 遍历获取的覆盖点列表
   for (const auto& point_ind : GetViewPointCoveredPointList(viewpoint_index, use_array_ind))
   {
-    MY_ASSERT(misc_utils_ns::InRange<bool>(point_list, point_ind));
-    if (!point_list[point_ind])
+    MY_ASSERT(misc_utils_ns::InRange<bool>(point_list, point_ind)); // 确保点索引在范围内
+    if (!point_list[point_ind]) // 如果该点未被覆盖
     {
-      covered_point_num++;
+      covered_point_num++; // 增加覆盖点数量
     }
   }
-  return covered_point_num;
+  return covered_point_num; // 返回覆盖点数量
 }
 int ViewPointManager::GetViewPointCoveredFrontierPointNum(const std::vector<bool>& frontier_point_list,
                                                           int viewpoint_index, bool use_array_ind)

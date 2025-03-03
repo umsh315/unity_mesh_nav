@@ -20,8 +20,14 @@ class Repuber(Node):
     def __init__(self):
         super().__init__('sensor_transformer')
         self.imu_sub = self.create_subscription(Imu, '/utlidar/imu', self.imu_callback, 50)
-        self.cloud_sub = self.create_subscription(PointCloud2, '/utlidar/cloud', self.cloud_callback, 50)
-        
+        # self.cloud_sub = self.create_subscription(PointCloud2, '/utlidar/cloud', self.cloud_callback, 50)
+        self.cloud_sub = self.create_subscription(PointCloud2, '/utlidar/cloud_deskewed', self.cloud_callback, 50)  # 去畸变雷达点云
+
+        # 订阅禾赛雷达+自身IMU
+        # self.imu_sub = self.create_subscription(Imu, '/utlidar/imu', self.imu_callback, 50)
+        # self.cloud_sub = self.create_subscription(PointCloud2, '/utlidar/cloud', self.cloud_callback, 50)
+
+
         self.imu_raw_pub = self.create_publisher(Imu, '/utlidar/transformed_raw_imu', 50)
         self.imu_pub = self.create_publisher(Imu, '/utlidar/transformed_imu', 50)
         self.cloud_pub = self.create_publisher(PointCloud2, '/utlidar/transformed_cloud', 50)

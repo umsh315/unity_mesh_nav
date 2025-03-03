@@ -457,6 +457,10 @@ void GridWorld::GetExploringCellIndices(std::vector<int>& exploring_cell_indices
   exploring_cell_indices.clear();
   for (int i = 0; i < subspaces_->GetCellNumber(); i++)
   {
+
+    // 打印每个单元格的状态
+    RCLCPP_INFO(rclcpp::get_logger("grid_wolrd"), "GetExplore: Cell index: %d, Status: %d", i, subspaces_->GetCell(i).GetStatus());
+
     if (subspaces_->GetCell(i).GetStatus() == CellStatus::EXPLORING)
     {
       exploring_cell_indices.push_back(i);
@@ -592,6 +596,10 @@ void GridWorld::UpdateCellStatus(const std::shared_ptr<viewpoint_manager_ns::Vie
     {
       MY_ASSERT(viewpoint_manager->IsViewPointCandidate(viewpoint_ind));
       candidate_count++;
+
+      // // 显示当前viewpoint_ind
+      // RCLCPP_INFO(rclcpp::get_logger("grid_world"), "当前视点索引: %d", viewpoint_ind);
+
       if (viewpoint_manager->ViewPointSelected(viewpoint_ind))
       {
         selected_viewpoint_count++;
@@ -620,7 +628,11 @@ void GridWorld::UpdateCellStatus(const std::shared_ptr<viewpoint_manager_ns::Vie
         above_frontier_threshold_count++;
       }
     }
-    // Exploring to Covered
+
+    // // 打印当前选定视点数量
+    // RCLCPP_INFO(rclcpp::get_logger("grid_world"), "当前选定的视点数量: %d", selected_viewpoint_count);
+
+
     if (subspaces_->GetCell(cell_ind).GetStatus() == CellStatus::EXPLORING &&
         above_frontier_threshold_count < kCellExploringToCoveredThr &&
         above_small_threshold_count < kCellExploringToCoveredThr && selected_viewpoint_count == 0 &&
@@ -742,6 +754,9 @@ exploration_path_ns::ExplorationPath GridWorld::SolveGlobalTSP(
   std::vector<int> exploring_cell_indices;
   for (int i = 0; i < subspaces_->GetCellNumber(); i++)
   {
+
+    
+
     if (subspaces_->GetCell(i).GetStatus() == CellStatus::EXPLORING)
     {
       if (std::find(neighbor_cell_indices_.begin(), neighbor_cell_indices_.end(), i) == neighbor_cell_indices_.end() ||
@@ -796,41 +811,63 @@ exploration_path_ns::ExplorationPath GridWorld::SolveGlobalTSP(
         }
       }
     }
+
+    // // 打印循环执行后，每个单元格的状态
+    // RCLCPP_INFO(rclcpp::get_logger("grid_wolrd"), "STSP:Cell index: %d, Status: %d", i, subspaces_->GetCell(i).GetStatus());
+
   }
 
   /****** Return home ******/
+  // 如果没有需要探索的单元格
   if (exploring_cell_indices.empty())
   {
+    // 打印日志提示没有探索的单元格
+    RCLCPP_INFO(rclcpp::get_logger("grid_wolrd"), "没有探索的单元格索引。");
+
+    // 设置返回家的标志
     return_home_ = true;
 
+    // 定义家的位置
     geometry_msgs::msg::Point home_position;
 
+    // 定义返回家的路径
     nav_msgs::msg::Path return_home_path;
+    // 如果没有使用关键点图或关键点图为空
     if (!use_keypose_graph_ || keypose_graph == nullptr || keypose_graph->GetNodeNum() == 0)
     {
+      // 创建机器人当前位置的姿态
       geometry_msgs::msg::PoseStamped robot_pose;
       robot_pose.pose.position = robot_position_;
 
+      // 创建家位置的姿态
       geometry_msgs::msg::PoseStamped home_pose;
       home_pose.pose.position = home_position;
+      // 将机器人位置和家位置添加到路径中
       return_home_path.poses.push_back(robot_pose);
       return_home_path.poses.push_back(home_pose);
     }
     else
     {
+      // 获取关键点图中第一个关键点作为家的位置
       home_position = keypose_graph->GetFirstKeyposePosition();
+      // 计算从当前位置到家的最短路径
       keypose_graph->GetShortestPath(global_path_robot_position, home_position, true, return_home_path, false);
+      // 如果找到有效路径(至少包含两个点)
       if (return_home_path.poses.size() >= 2)
       {
+        // 将路径转换为全局路径格式
         global_path.FromPath(return_home_path);
+        // 设置起点类型为机器人位置
         global_path.nodes_.front().type_ = exploration_path_ns::NodeType::ROBOT;
 
+        // 设置中间点类型为全局经过点
         for (int i = 1; i < global_path.nodes_.size() - 1; i++)
         {
           global_path.nodes_[i].type_ = exploration_path_ns::NodeType::GLOBAL_VIA_POINT;
         }
+        // 设置终点类型为家
         global_path.nodes_.back().type_ = exploration_path_ns::NodeType::HOME;
-        // Make it a loop
+        // 将路径变成循环路径,添加返回的路径点
         for (int i = global_path.nodes_.size() - 2; i >= 0; i--)
         {
           global_path.Append(global_path.nodes_[i]);
@@ -838,6 +875,7 @@ exploration_path_ns::ExplorationPath GridWorld::SolveGlobalTSP(
       }
       else
       {
+        // 如果找不到路径,TODO:需要寻找一条路径
         // RCLCPP_ERROR(this->get_logger(), "Cannot find path home");
         // TODO: find a path
       }
