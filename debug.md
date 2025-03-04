@@ -107,6 +107,32 @@ SelectViewPointFromFrontierQueue函数 ——> 最终调用 SelectViewPoint 函�
 
     6、20250304版室内走廊可行，但由于雷达不是360度 面朝死角就会死
     7、waypoint穿墙
+        1）尝试把路点投射关掉
+        3）调小一点绿色框是一下
+        1）kSurfaceCloudDwzLeafSize 值再稍微调小一点
+        2）kViewPointCollisionMargin 值再稍微大一点，0.05感觉已经超出雷达的最小范围了
+
+        2）是不是terrain参数的问题
+        3）Rviz里看terrain_map输出对不对，有没有因为state stimation不准而导致一些噪点被当成障碍物
+        4）这个问题可以先检查一下/terrain_map 和state estimation输出对不对。理论上来说TARE会用/terrain_map确定可行驶区域，不会把/way_point放在不能到的地方。但如果/terrain_map 和state estimation输出有误，倒是障碍物没有被检测到则会出现这个问题。另外在小环境中可以尝试减小kExtendWayPointDistance，这样TARE就不会把目标点投影过远至不可到达的地方。
+        5）在terrain_analysis里面有个参数noDataObstacle可以设成true试一下。这样terrain_analysis在做可行驶区域分析的时候会在没有激光数据的地方加上与机器人同高的虚拟障碍点
+        6）terrain_analysis 有个参数noDataObstacle，设置为true算法会把没有激光雷达点的区域，比如向下的楼梯当成障碍物。tare会接受障碍物信息阻挡viewpoint生成。
+        7）你可以把launch文件里的clearDyObs设置成false，不要检测动态障碍物，我们的动态障碍物检测考虑的分辨率比较粗糙，所以可能会把部分不是动态障碍物的部分当成障碍物消除掉，所以导致地面上出现一些空白
+        8）另外，地面上出现的红色和黄色的点，你可以在rviz里选中红色的点，看看intensity是多少，然后看一下这些intensity与实际的是不是相符。intensity的计算方式是该点的高度相对于周围0.1m范围内最低点的高度，你可以判断一下是不是正确。
+        9）你可以先把terrain_annalysis以及local planner都设置好，确保车辆在这个环境里能够正常的到达waypoint，然后再设置tare planner
+        10）在Rviz里打开viewpoint的visualization,把颜色设为intensity，如果能看到比较多的viewpoint点有较大的"intensity"（颜色偏紫色），说明有足够多的viewpoint能看到surface point或者frontier point。这种情况下探索会更仔细和完整。
+
+        11）另外车身高度 minRelZ maxRelZ这些按我自己的小车情况做了相应调整，结果就是小车在自动规划的时候转向没有那么高频且慢了很多，地形图里周围的红点也基本上消除了。
+        12）需要注意的是这个参数需要和viewpoint_manager/resolution_[x,y,z]相互配合，确保kViewPointCollisionMargin的两倍要大于viewpoint的resolution，要不然计算出来的路径可能会穿墙
+
+        
+    算法不成熟
+        1、动态障碍物粗糙
+        2、路点强外面
+        3、走廊表现很差，很多人反馈，调了很多参数才效果好一些
+
+    斜坡处理
+          我是通过计算点云的斜率来判断是不是斜坡，然后修改intensity来调整可通行区域的范围，但这样修改仅对local_planner有效，目前还没找到和tare相关的接口
 
  ros2 run go2_bringup motion_to_tf 
  

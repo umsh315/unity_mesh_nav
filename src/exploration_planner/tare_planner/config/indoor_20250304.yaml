@@ -47,7 +47,7 @@ tare_planner_node:
     rolling_occupancy_grid/resolution_y : 0.3
     rolling_occupancy_grid/resolution_z : 0.3
 
-    kSurfaceCloudDwzLeafSize : 0.3
+    kSurfaceCloudDwzLeafSize : 0.3            # 原值0.3,狭窄空间下调可能有效
     kCollisionCloudDwzLeafSize : 0.1          # 碰撞坚持点云分辨率 原值0.2
     kKeyposeCloudStackNum : 5
     kPointCloudRowNum : 50

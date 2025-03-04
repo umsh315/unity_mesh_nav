@@ -20,7 +20,7 @@ tare_planner_node:
     kRushHome : true
     kUseTerrainHeight : false
     kCheckTerrainCollision : true
-    kExtendWayPoint : true
+    kExtendWayPoint : true                      # 原值true
     kUseLineOfSightLookAheadPoint : true
     kNoExplorationReturnHome : true
     kExtendWayPointDistanceBig : 4.0             # 原值8.0 超过雷达距离一点
@@ -28,7 +28,7 @@ tare_planner_node:
     kKeyposeCloudDwzFilterLeafSize : 0.2
     kRushHomeDist : 5.0
     kAtHomeDistThreshold : 0.5
-    kTerrainCollisionThreshold : 0.5
+    kTerrainCollisionThreshold : 0.5             # 原值0.5,intensity超过这个值的点，将不被viewpoint选中
     kLookAheadDistance : 8.0
     kUseMomentum : false 
     kDirectionChangeCounterThr : 6
@@ -70,16 +70,16 @@ tare_planner_node:
     keypose_graph/kAddEdgeCollisionCheckPointNumThr : 1
 
     # ViewPointManager
-    viewpoint_manager/number_x : 100                # 原值50，大一点，让边界点都落在绿色框范围内
-    viewpoint_manager/number_y : 100
+    viewpoint_manager/number_x : 300                # 原值50，大一点，让边界点都落在绿色框范围内
+    viewpoint_manager/number_y : 300
     viewpoint_manager/number_z : 1
-    viewpoint_manager/resolution_x : 0.4          # 分辨率 原值0.4,值越大 horizen绿框边长越大
-    viewpoint_manager/resolution_y : 0.4
+    viewpoint_manager/resolution_x : 0.15         # 分辨率 原值0.4,值越大 horizen绿框边长越大
+    viewpoint_manager/resolution_y : 0.15
     viewpoint_manager/resolution_z : 0.0
     kConnectivityHeightDiffThr : 0.25
     kGreedyViewPointSampleRange : 3
     kLocalPathOptimizationItrMax : 10
-    kViewPointCollisionMargin : 0.05                 # 视点碰撞检查边距 原值 0.6 决定能不能穿越狭窄区域
+    kViewPointCollisionMargin : 0.2                # 视点碰撞检查边距 原值 0.6 如果这个范围内有障碍物，说明当前viewpoint有碰撞风险，不可选
     kViewPointCollisionMarginZPlus : 0.5
     kViewPointCollisionMarginZMinus : 0.5
     kCollisionGridZScale : 1.0
