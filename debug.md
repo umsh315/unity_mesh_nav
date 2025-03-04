@@ -103,10 +103,17 @@ SelectViewPointFromFrontierQueue函数 ——> 最终调用 SelectViewPoint 函�
     2、如果突然触发了[tare_planner_node-11] [INFO] [grid_wolrd]: 没有探索的单元格索引。，基本就死了，然后规划的路线也消失了
     3、20250228下午16点48分，这套参数目前在仿真环境看是奏效的
     4、目前参数实测似乎可以了，但是雷达的噪点太多，试下去畸变的话题
-    5、室外场景可以测一下
+    5、室外场景可以测一下——
 
+    6、20250304版室内走廊可行，但由于雷达不是360度 面朝死角就会死
+    7、waypoint穿墙
+
+ ros2 run go2_bringup motion_to_tf 
  
-
+line 136, in cloud_callback
+[transform_everything-2]     transformed_points[i][4] = int(transformed_points[i][4])
+[transform_everything-2] IndexError: list index out of range
+[ERROR] [transform_everything-2]: process has died [pid 67031,
 
 1、int covered_point_num = viewpoint_manager_->GetViewPointCoveredPointNum(
         covered_point_list, viewpoint_array_index, true) 这个函数的处理原理是什么，为什么经常covered_point_num=0

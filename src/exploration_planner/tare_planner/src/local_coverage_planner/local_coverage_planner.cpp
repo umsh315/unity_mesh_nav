@@ -132,7 +132,7 @@ void LocalCoveragePlanner::EnqueueViewpointCandidates(
     }
     
     if (!viewpoint_manager_->ViewPointInExploringCell(viewpoint_index)) {
-      RCLCPP_INFO(rclcpp::get_logger("local_coverage_planner"), "Viewpoint %d is not in exploring cell.", viewpoint_index);
+      // RCLCPP_INFO(rclcpp::get_logger("local_coverage_planner"), "Viewpoint %d is not in exploring cell.", viewpoint_index);
       continue;
     }
 
@@ -149,10 +149,10 @@ void LocalCoveragePlanner::EnqueueViewpointCandidates(
     int covered_point_num = viewpoint_manager_->GetViewPointCoveredPointNum(
         covered_point_list, viewpoint_array_index, true);
 
-    if (covered_point_num >= 1) {
-        // 打印当前视点覆盖的普通点数量
-        RCLCPP_INFO(rclcpp::get_logger("local_coverage_planner"), "当前视点 %d 覆盖的普通点数量: %d", viewpoint_array_index, covered_point_num);
-    }
+    // if (covered_point_num >= 1) {
+    //     // 打印当前视点覆盖的普通点数量
+    //     RCLCPP_INFO(rclcpp::get_logger("local_coverage_planner"), "当前视点 %d 覆盖的普通点数量: %d", viewpoint_array_index, covered_point_num);
+    // }
 
 
     int covered_frontier_point_num = viewpoint_manager_->GetViewPointCoveredFrontierPointNum(

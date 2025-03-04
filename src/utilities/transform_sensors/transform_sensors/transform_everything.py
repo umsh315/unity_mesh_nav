@@ -20,12 +20,12 @@ class Repuber(Node):
     def __init__(self):
         super().__init__('sensor_transformer')
         self.imu_sub = self.create_subscription(Imu, '/utlidar/imu', self.imu_callback, 50)
-        # self.cloud_sub = self.create_subscription(PointCloud2, '/utlidar/cloud', self.cloud_callback, 50)
-        self.cloud_sub = self.create_subscription(PointCloud2, '/utlidar/cloud_deskewed', self.cloud_callback, 50)  # 去畸变雷达点云
+        self.cloud_sub = self.create_subscription(PointCloud2, '/utlidar/cloud', self.cloud_callback, 50)
+        # self.cloud_sub = self.create_subscription(PointCloud2, '/utlidar/cloud_deskewed', self.cloud_callback, 50)  # 去畸变雷达点云
 
-        # 订阅禾赛雷达+自身IMU
-        # self.imu_sub = self.create_subscription(Imu, '/utlidar/imu', self.imu_callback, 50)
-        # self.cloud_sub = self.create_subscription(PointCloud2, '/utlidar/cloud', self.cloud_callback, 50)
+        # #订阅禾赛雷达+自身IMU
+        # self.imu_sub = self.create_subscription(Imu, '/hesai/imu', self.imu_callback, 50)
+        # self.cloud_sub = self.create_subscription(PointCloud2, '/hesai/lidar', self.cloud_callback, 50)
 
 
         self.imu_raw_pub = self.create_publisher(Imu, '/utlidar/transformed_raw_imu', 50)
@@ -114,38 +114,67 @@ class Repuber(Node):
                     point[2] < self.z_filter_max
         return is_in_box
 
-    def cloud_callback(self, data):
-        if not self.time_stamp_offset_set:
-            self.time_stamp_offset = self.get_clock().now().nanoseconds - Time.from_msg(data.header.stamp).nanoseconds
-            self.time_stamp_offset_set = True
+    def cloud_callback(self, data):  # 定义云回调函数，接收数据
+
+        if not self.time_stamp_offset_set:  # 如果时间戳偏移量未设置
+            self.time_stamp_offset = self.get_clock().now().nanoseconds - Time.from_msg(data.header.stamp).nanoseconds  # 计算时间戳偏移量
+            self.time_stamp_offset_set = True  # 设置时间戳偏移量为已设置
                 
-        cloud_arr = pc2.read_points_list(data)
-        points = np.array(cloud_arr)
+        cloud_arr = pc2.read_points_list(data)  # 从数据中读取点云数组
+        points = np.array(cloud_arr)  # 将点云数组转换为NumPy数组
 
-        transform = self.body2cloud_trans.transform
-        mat = quat2mat(np.array([transform.rotation.w, transform.rotation.x, transform.rotation.y, transform.rotation.z]))
-        translation = np.array([transform.translation.x, transform.translation.y, transform.translation.z])
+
+        # # 添加以下打印语句
+        # print("Point data shape:", points.shape)
+        # if len(points) > 0:
+        #     print("Sample point structure:", points[0])
+        #     print("Sample point length:", len(points[0]))
+
+        transform = self.body2cloud_trans.transform  # 获取身体到点云的变换
+        mat = quat2mat(np.array([transform.rotation.w, transform.rotation.x, transform.rotation.y, transform.rotation.z]))  # 将四元数转换为旋转矩阵
+        translation = np.array([transform.translation.x, transform.translation.y, transform.translation.z])  # 获取平移向量
         
-        transformed_points = points
-        transformed_points[:, 0:3] = points[:, 0:3] @ mat.T + translation
-        transformed_points[:, 2] -= self.cam_offset
-        i = 0
-        remove_list = []
-        transformed_points = transformed_points.tolist()
-        for i in range(len(transformed_points)):
-            transformed_points[i][4] = int(transformed_points[i][4])
-            if self.is_in_filter_box(transformed_points[i]):
-                remove_list.append(i)
+        transformed_points = points  # 初始化变换后的点
+        transformed_points[:, 0:3] = points[:, 0:3] @ mat.T + translation  # 应用旋转和位移变换
+        transformed_points[:, 2] -= self.cam_offset  # 调整Z轴坐标，减去相机偏移
+        i = 0  # 初始化索引
+        remove_list = []  # 初始化待移除的点索引列表
+        transformed_points = transformed_points.tolist()  # 将变换后的点转换为列表
 
-        remove_list.sort(reverse=True)
 
-        for id_to_remove in remove_list:
-            del transformed_points[id_to_remove]
+        # for i in range(len(transformed_points)):
+        #     # 只有当点有足够的字段时才尝试转换强度值
+        #     if len(transformed_points[i]) > 4:
+        #         try:
+        #             transformed_points[i][4] = int(transformed_points[i][4])
+        #         except (ValueError, TypeError):
+        #             # 如果转换失败，保持原值不变
+        #             pass
+                    
+        #     if self.is_in_filter_box(transformed_points[i]):
+        #         remove_list.append(i)
+
+
+
+        for i in range(len(transformed_points)):  # 遍历所有变换后的点
+            transformed_points[i][4] = int(transformed_points[i][4])  # 将点的强度值转换为整数
+            if self.is_in_filter_box(transformed_points[i]):  # 检查点是否在过滤框内
+                remove_list.append(i)  # 如果在过滤框内，添加到待移除列表
+
+
+
+
+
+
+        remove_list.sort(reverse=True)  # 反向排序待移除列表，以便从后向前删除
+
+        for id_to_remove in remove_list:  # 遍历待移除列表
+            del transformed_points[id_to_remove]  # 删除变换后的点
         
-        elevated_cloud = pc2.create_cloud(data.header, data.fields, transformed_points)
-        elevated_cloud.header.stamp = Time(nanoseconds=Time.from_msg(elevated_cloud.header.stamp).nanoseconds + self.time_stamp_offset).to_msg()
-        elevated_cloud.header.frame_id = "body"
-        elevated_cloud.is_dense = data.is_dense
+        elevated_cloud = pc2.create_cloud(data.header, data.fields, transformed_points)  # 创建新的点云
+        elevated_cloud.header.stamp = Time(nanoseconds=Time.from_msg(elevated_cloud.header.stamp).nanoseconds + self.time_stamp_offset).to_msg()  # 设置点云的时间戳
+        elevated_cloud.header.frame_id = "body"  # 设置点云的坐标系
+        elevated_cloud.is_dense = data.is_dense  # 设置点云的稠密性
 
         self.cloud_pub.publish(elevated_cloud)
             
