@@ -15,8 +15,8 @@ def generate_launch_description():
 
     scenario_arg = DeclareLaunchArgument(
         'scenario',
-        # default_value='indoor',
-        default_value='outdoor',
+        default_value='indoor',
+        # default_value='outdoor',
         description='Exploration scenario')
 
     use_boundary_arg = DeclareLaunchArgument(

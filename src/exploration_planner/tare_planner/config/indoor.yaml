@@ -79,7 +79,7 @@ tare_planner_node:
     kConnectivityHeightDiffThr : 0.25
     kGreedyViewPointSampleRange : 3
     kLocalPathOptimizationItrMax : 10
-    kViewPointCollisionMargin : 0.15                # 视点碰撞检查边距 原值 0.6 如果这个范围内有障碍物，说明当前viewpoint有碰撞风险，不可选
+    kViewPointCollisionMargin : 0.3                # 视点碰撞检查边距 原值 0.6 如果这个范围内有障碍物，说明当前viewpoint有碰撞风险，不可选
     kViewPointCollisionMarginZPlus : 0.5
     kViewPointCollisionMarginZMinus : 0.5
     kCollisionGridZScale : 1.0
@@ -93,7 +93,7 @@ tare_planner_node:
     kCheckDynamicObstacleCollision : false
     kCollisionFrameCountMax : 3
 
-    kSensorRange : 5.5                  # 激光点云覆盖的举例,原值3.5
+    kSensorRange : 3.5                  # 激光点云覆盖的举例,原值3.5
     kNeighborRange : 1.0                # 默认值 3.0  这个决定小方块大小
     kCoverageOcclusionThr : 0.3         # 原址0.3 用于在视点管理和可见性计算中处理遮挡情况，确保算法能够更准确地判断哪些点是可见的
     kCoverageDilationRadius : 0.5
@@ -104,9 +104,9 @@ tare_planner_node:
     kGridWorldZNum : 121
     kGridWorldCellHeight : 3.0
     kGridWorldNearbyGridNum : 5
-    kMinAddPointNumSmall : 9            # 视点最小覆盖的点数量 ,原值30，15是测试下来的极限值，不要动了
+    kMinAddPointNumSmall : 30            # 视点最小覆盖的点数量 ,原值30，15是测试下来的极限值，不要动了
     kMinAddPointNumBig : 50
-    kMinAddFrontierPointNum : 3         # 视点最小覆盖的前沿点数量,原值10，5是测试下来的极限值，不要动了
+    kMinAddFrontierPointNum : 10         # 视点最小覆盖的前沿点数量,原值10，5是测试下来的极限值，不要动了
     kCellExploringToCoveredThr : 1
     kCellCoveredToExploringThr: 10
     kCellExploringToAlmostCoveredThr: 10

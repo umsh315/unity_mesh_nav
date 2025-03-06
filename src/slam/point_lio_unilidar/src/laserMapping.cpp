@@ -1458,11 +1458,25 @@ int main(int argc, char **argv)
 
     if (pcl_wait_save->size() > 0 && pcd_save_en)
     {
+
+        // // 获取当前时间
+        // auto now = std::chrono::system_clock::now();
+        // std::time_t now_time = std::chrono::system_clock::to_time_t(now);
+        // std::tm *tm_now = std::localtime(&now_time);
+
+        // // 格式化文件名
+        // std::ostringstream file_name_stream;
+        // file_name_stream << "scans_" 
+        //                  << std::put_time(tm_now, "%Y%m%d_%H%M%S") << ".pcd"; // 添加日期和时间
+        // string file_name = file_name_stream.str();
+
+
         string file_name = string("scans.pcd");
         string all_points_dir(string(string(ROOT_DIR) + "PCD/") + file_name);
         std::cout << "Saving map to file: " << all_points_dir << std::endl;
         pcl::PCDWriter pcd_writer;
         pcd_writer.writeBinary(all_points_dir, *pcl_wait_save);
+
     }
     fout_out.close();
     fout_imu_pbp.close();

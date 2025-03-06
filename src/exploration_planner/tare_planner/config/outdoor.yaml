@@ -70,8 +70,8 @@ tare_planner_node:
     keypose_graph/kAddEdgeCollisionCheckPointNumThr : 1
 
     # ViewPointManager
-    viewpoint_manager/number_x : 45               # 原值45，大一点，让边界点都落在绿色框范围内
-    viewpoint_manager/number_y : 45
+    viewpoint_manager/number_x : 80               # 原值45，大一点，让边界点都落在绿色框范围内
+    viewpoint_manager/number_y : 80
     viewpoint_manager/number_z : 1
     viewpoint_manager/resolution_x : 0.55          # 分辨率 原值0.55,值越大 horizen绿框边长越大
     viewpoint_manager/resolution_y : 0.55
@@ -79,7 +79,7 @@ tare_planner_node:
     kConnectivityHeightDiffThr : 0.4
     kGreedyViewPointSampleRange : 3
     kLocalPathOptimizationItrMax : 10
-    kViewPointCollisionMargin : 0.6                # 视点碰撞检查边距 原值 0.6 如果这个范围内有障碍物，说明当前viewpoint有碰撞风险，不可选
+    kViewPointCollisionMargin : 0.3                # 视点碰撞检查边距 原值 0.6 如果这个范围内有障碍物，说明当前viewpoint有碰撞风险，不可选
     kViewPointCollisionMarginZPlus : 0.5
     kViewPointCollisionMarginZMinus : 0.5
     kCollisionGridZScale : 1.0
@@ -93,7 +93,7 @@ tare_planner_node:
     kCheckDynamicObstacleCollision : false
     kCollisionFrameCountMax : 3
 
-    kSensorRange : 6.0
+    kSensorRange : 10.0
     kNeighborRange : 3.0                        # 默认值 3.0  这个决定小方块大小
     kCoverageOcclusionThr : 0.3
     kCoverageDilationRadius : 0.5
@@ -104,9 +104,9 @@ tare_planner_node:
     kGridWorldZNum : 121
     kGridWorldCellHeight : 3.0
     kGridWorldNearbyGridNum : 5
-    kMinAddPointNumSmall : 40                   # 视点最小覆盖的点数量 ,原值40，15是测试下来的极限值，不要动了
+    kMinAddPointNumSmall : 12                   # 视点最小覆盖的点数量 ,原值40，15是测试下来的极限值，不要动了
     kMinAddPointNumBig : 60
-    kMinAddFrontierPointNum : 15                # 视点最小覆盖的前沿点数量,原值15，5是测试下来的极限值，不要动了
+    kMinAddFrontierPointNum : 4                # 视点最小覆盖的前沿点数量,原值15，5是测试下来的极限值，不要动了
     kCellExploringToCoveredThr : 1
     kCellCoveredToExploringThr: 10
     kCellExploringToAlmostCoveredThr: 10
