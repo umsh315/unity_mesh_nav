@@ -181,18 +181,18 @@ void LocalCoveragePlanner::EnqueueViewpointCandidates(
   // }
 
 
-  // 日志打印以检查候选视点的状态
-  if (!has_candidates) {
-    RCLCPP_INFO(rclcpp::get_logger("local_coverage_planner"), "No candidate viewpoints available.");
-  } else if (all_visited) {
-    RCLCPP_INFO(rclcpp::get_logger("local_coverage_planner"), "All candidate viewpoints have been visited.");
-  } else if (all_not_in_cell) {
-    RCLCPP_INFO(rclcpp::get_logger("local_coverage_planner"), "All candidate viewpoints are not in exploring cells.");
-  } else if (insufficient_coverage) {
-    RCLCPP_INFO(rclcpp::get_logger("local_coverage_planner"), "All candidate viewpoints have insufficient coverage.");
-  } else if (frontier_queue.empty()) {
-    RCLCPP_INFO(rclcpp::get_logger("local_coverage_planner"), "frontier_queue is empty after processing candidates.");
-  }
+  // // 日志打印以检查候选视点的状态
+  // if (!has_candidates) {
+  //   RCLCPP_INFO(rclcpp::get_logger("local_coverage_planner"), "No candidate viewpoints available.");
+  // } else if (all_visited) {
+  //   RCLCPP_INFO(rclcpp::get_logger("local_coverage_planner"), "All candidate viewpoints have been visited.");
+  // } else if (all_not_in_cell) {
+  //   RCLCPP_INFO(rclcpp::get_logger("local_coverage_planner"), "All candidate viewpoints are not in exploring cells.");
+  // } else if (insufficient_coverage) {
+  //   RCLCPP_INFO(rclcpp::get_logger("local_coverage_planner"), "All candidate viewpoints have insufficient coverage.");
+  // } else if (frontier_queue.empty()) {
+  //   RCLCPP_INFO(rclcpp::get_logger("local_coverage_planner"), "frontier_queue is empty after processing candidates.");
+  // }
 
 
   // Sort the queue
@@ -347,8 +347,8 @@ void LocalCoveragePlanner::SelectViewPointFromFrontierQueue(
   }
 
   // 打印use_frontier_和frontier_queue[0].first
-  // RCLCPP_INFO(rclcpp::get_logger("local_coverage_planner"), "use_frontier_: %d", use_frontier_);
-  RCLCPP_INFO(rclcpp::get_logger("local_coverage_planner"), "frontier_queue[0].first: %d", frontier_queue.empty() ? 0 : frontier_queue[0].first);
+  
+  // RCLCPP_INFO(rclcpp::get_logger("local_coverage_planner"), "frontier_queue[0].first: %d", frontier_queue.empty() ? 0 : frontier_queue[0].first);
 
   // kMinAddFrontierPointNum=10
   if (use_frontier_ && !frontier_queue.empty() &&
@@ -378,8 +378,8 @@ exploration_path_ns::ExplorationPath LocalCoveragePlanner::SolveTSP(
   // nav_msgs::msg::Path tsp_path;
   exploration_path_ns::ExplorationPath tsp_path;
 
-  // 打印选定视点索引的大小
-  RCLCPP_INFO(rclcpp::get_logger("local_coverage_planner"), "开始执行SolveTSP函数是，视点队列大小: %zu", selected_viewpoint_indices.size());
+  // // 打印选定视点索引的大小
+  // RCLCPP_INFO(rclcpp::get_logger("local_coverage_planner"), "开始执行SolveTSP函数是，视点队列大小: %zu", selected_viewpoint_indices.size());
 
 
   if (selected_viewpoint_indices.empty()) {
@@ -820,15 +820,15 @@ LocalCoveragePlanner::SolveLocalCoverageProblem(
       selected_viewpoint_indices_itr.push_back(ind); // 将视点索引添加到选定的视点索引向量中
     }
 
-    RCLCPP_INFO(rclcpp::get_logger("local_coverage_planner"), "添加reused_viewpoint_indices后，视点数量: %zu", selected_viewpoint_indices_itr.size());
+    // RCLCPP_INFO(rclcpp::get_logger("local_coverage_planner"), "添加reused_viewpoint_indices后，视点数量: %zu", selected_viewpoint_indices_itr.size());
 
-    RCLCPP_INFO(rclcpp::get_logger("local_coverage_planner"), "queue队列不满足，前沿视点队列frontier_queue size: %zu", frontier_queue.size());
+    // RCLCPP_INFO(rclcpp::get_logger("local_coverage_planner"), "queue队列不满足，前沿视点队列frontier_queue size: %zu", frontier_queue.size());
 
     SelectViewPointFromFrontierQueue(frontier_queue, frontier_covered, // 从前沿队列中选择视点
                                      selected_viewpoint_indices_itr); // 传入选定的视点索引向量
 
-    // 打印selected_viewpoint_indices_itr的大小
-    RCLCPP_INFO(rclcpp::get_logger("local_coverage_planner"), "queue队列不满足条件，从前沿队列中选择视点，前沿模式获取selected_viewpoint_indices_itr队列视点大小为: %zu", selected_viewpoint_indices_itr.size());
+    // // 打印selected_viewpoint_indices_itr的大小
+    // RCLCPP_INFO(rclcpp::get_logger("local_coverage_planner"), "queue队列不满足条件，从前沿队列中选择视点，前沿模式获取selected_viewpoint_indices_itr队列视点大小为: %zu", selected_viewpoint_indices_itr.size());
 
 
 

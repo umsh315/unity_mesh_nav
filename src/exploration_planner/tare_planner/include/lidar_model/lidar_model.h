@@ -88,44 +88,54 @@ public:
    * @return false
    */
   template <class PointType>
+  // 检查点是否可见
   bool CheckVisibility(const PointType& point, double occlusion_threshold) const
   {
+    // 计算点到视点的距离
     double distance_to_point = misc_utils_ns::PointXYZDist<PointType, geometry_msgs::msg::Point>(point, pose_.position);
 
+    // 如果距离为零，返回不可见
     if (isZero(distance_to_point))
       return false;
 
+    // 计算点与视点的坐标差
     double dx = point.x - pose_.position.x;
     double dy = point.y - pose_.position.y;
     double dz = point.z - pose_.position.z;
 
+    // 获取水平和垂直角度
     int horizontal_angle = GetHorizontalAngle(dx, dy);
     int vertical_angle = GetVerticalAngle(dz, distance_to_point);
 
+    // 获取水平和垂直邻居数量
     int horizontal_neighbor_num = GetHorizontalNeighborNum(distance_to_point);
     int vertical_neighbor_num = GetVerticalNeighborNum(distance_to_point);
 
+    // 遍历邻居
     for (int n = -horizontal_neighbor_num; n <= horizontal_neighbor_num; n++)
     {
       int column_index = horizontal_angle + n;
+      // 检查列索引是否在范围内
       if (!ColumnIndexInRange(column_index))
         continue;
       for (int m = -vertical_neighbor_num; m <= vertical_neighbor_num; m++)
       {
         int row_index = vertical_angle + m;
+        // 检查行索引是否在范围内
         if (!RowIndexInRange(row_index))
           continue;
         int ind = sub2ind(row_index, column_index);
         float previous_distance_to_point = covered_voxel_[ind];
+        // 检查点是否可见
         if ((!isZero(previous_distance_to_point) &&
              distance_to_point < previous_distance_to_point + occlusion_threshold && !reset_[ind]) ||
             reset_[ind])
         {
-          return true;
+          return true; // 如果可见，返回true
         }
       }
     }
-    return false;
+    return false; // 如果不可见，返回false
   }
   /**
    * @brief

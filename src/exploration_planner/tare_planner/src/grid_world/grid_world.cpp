@@ -821,8 +821,8 @@ exploration_path_ns::ExplorationPath GridWorld::SolveGlobalTSP(
   // 如果没有需要探索的单元格
   if (exploring_cell_indices.empty())
   {
-    // 打印日志提示没有探索的单元格
-    RCLCPP_INFO(rclcpp::get_logger("grid_wolrd"), "没有探索的单元格索引。");
+    // // 打印日志提示没有探索的单元格
+    // RCLCPP_INFO(rclcpp::get_logger("grid_wolrd"), "没有探索的单元格索引。");
 
     // 设置返回家的标志
     return_home_ = true;
