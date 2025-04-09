@@ -21,7 +21,7 @@ class Repuber(Node):
         super().__init__('sensor_transformer')
         self.imu_sub = self.create_subscription(Imu, '/utlidar/imu', self.imu_callback, 50)
         self.cloud_sub = self.create_subscription(PointCloud2, '/utlidar/cloud', self.cloud_callback, 50)
-        # self.cloud_sub = self.create_subscription(PointCloud2, '/utlidar/cloud_deskewed', self.cloud_callback, 50)  # 去畸变雷达点云
+       
 
         # #订阅禾赛雷达+自身IMU
         # self.imu_sub = self.create_subscription(Imu, '/hesai/imu', self.imu_callback, 50)
@@ -124,11 +124,6 @@ class Repuber(Node):
         points = np.array(cloud_arr)  # 将点云数组转换为NumPy数组
 
 
-        # # 添加以下打印语句
-        # print("Point data shape:", points.shape)
-        # if len(points) > 0:
-        #     print("Sample point structure:", points[0])
-        #     print("Sample point length:", len(points[0]))
 
         transform = self.body2cloud_trans.transform  # 获取身体到点云的变换
         mat = quat2mat(np.array([transform.rotation.w, transform.rotation.x, transform.rotation.y, transform.rotation.z]))  # 将四元数转换为旋转矩阵

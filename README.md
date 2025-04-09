@@ -96,11 +96,14 @@ colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
    ./system_real_robot_with_exploration_planner.sh
 
 
-ros2 launch far_planner far_planner.launch
-ros2 launch tare_planner explore.launch
 
-1、试一下用套件仿真时，话题订阅情况，关掉overmap,——要缩小了才能看到已探索区域，且在不同rviz上展示不同
-1、探索两步就停了
+1、卡在桌子下面，因为传感器没办法测出类似门框高度的障碍
+2、不能有架子腿，椅子腿
+3、最好不要有直角转弯
+4、有足够空间原地转弯掉头（如果上方雷达可以尝试倒着走）
+
+
+
 
 #### 启动相机驱动：
    1. 在新的终端中：

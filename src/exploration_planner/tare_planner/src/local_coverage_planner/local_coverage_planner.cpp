@@ -163,7 +163,7 @@ void LocalCoveragePlanner::EnqueueViewpointCandidates(
       cover_point_queue.emplace_back(covered_point_num, viewpoint_index);
 
       // 打印covered_point_queue的大小以及每个视点对应的covered_point_num
-      RCLCPP_INFO(rclcpp::get_logger("local_coverage_planner"), "存在视点覆盖普通点的数量covered_point_num大于阈值的视点队列数量为: %zu", cover_point_queue.size());
+      // RCLCPP_INFO(rclcpp::get_logger("local_coverage_planner"), "存在视点覆盖普通点的数量covered_point_num大于阈值的视点队列数量为: %zu", cover_point_queue.size());
       insufficient_coverage = false; // 找到一个覆盖点数量足够的视点
     } 
     else if (use_frontier_) {
@@ -340,11 +340,11 @@ void LocalCoveragePlanner::SelectViewPointFromFrontierQueue(
     std::vector<int> &selected_viewpoint_indices) {
 
   // 添加日志以检查frontier_queue是否为空
-  if (frontier_queue.empty()) {
-    RCLCPP_INFO(rclcpp::get_logger("local_coverage_planner"), "frontier_queue is empty.");
-  } else {
-    RCLCPP_INFO(rclcpp::get_logger("local_coverage_planner"), "frontier_queue has %zu viewpoints.", frontier_queue.size());
-  }
+  // if (frontier_queue.empty()) {
+  //   RCLCPP_INFO(rclcpp::get_logger("local_coverage_planner"), "frontier_queue is empty.");
+  // } else {
+  //   RCLCPP_INFO(rclcpp::get_logger("local_coverage_planner"), "frontier_queue has %zu viewpoints.", frontier_queue.size());
+  // }
 
   // 打印use_frontier_和frontier_queue[0].first
   
@@ -744,19 +744,19 @@ LocalCoveragePlanner::SolveLocalCoverageProblem(
       misc_utils_ns::Timer select_viewpoint_timer("select viewpoints");
       select_viewpoint_timer.Start();
       // 打印queue和frontier_queue的大小
-      RCLCPP_INFO(rclcpp::get_logger("local_coverage_planner"), "queue队列满足条件时普通视点队列queue size: %zu", queue.size());
-      RCLCPP_INFO(rclcpp::get_logger("local_coverage_planner"), "queue队列满足条件时前沿视点队列frontier_queue size: %zu", frontier_queue.size());
+      // RCLCPP_INFO(rclcpp::get_logger("local_coverage_planner"), "queue队列满足条件时普通视点队列queue size: %zu", queue.size());
+      // RCLCPP_INFO(rclcpp::get_logger("local_coverage_planner"), "queue队列满足条件时前沿视点队列frontier_queue size: %zu", frontier_queue.size());
 
       // 从队列中选择视点
       SelectViewPoint(queue, covered, selected_viewpoint_indices_itr, false);
       // 打印selected_viewpoint_indices_itr的大小
-      RCLCPP_INFO(rclcpp::get_logger("local_coverage_planner"), "queue队列满足条件下调用TSP，普通模式获取selected_viewpoint_indices_itr队列视点大小为: %zu", selected_viewpoint_indices_itr.size());
+      // RCLCPP_INFO(rclcpp::get_logger("local_coverage_planner"), "queue队列满足条件下调用TSP，普通模式获取selected_viewpoint_indices_itr队列视点大小为: %zu", selected_viewpoint_indices_itr.size());
 
       // 从前沿队列中选择视点
       SelectViewPointFromFrontierQueue(frontier_queue, frontier_covered, selected_viewpoint_indices_itr);
 
       // 打印selected_viewpoint_indices_itr的大小
-      RCLCPP_INFO(rclcpp::get_logger("local_coverage_planner"), "queue队列满足条件下调用TSP，前沿模式获取selected_viewpoint_indices_itr队列视点大小为: %zu", selected_viewpoint_indices_itr.size());
+      // RCLCPP_INFO(rclcpp::get_logger("local_coverage_planner"), "queue队列满足条件下调用TSP，前沿模式获取selected_viewpoint_indices_itr队列视点大小为: %zu", selected_viewpoint_indices_itr.size());
 
 
 
@@ -788,7 +788,7 @@ LocalCoveragePlanner::SolveLocalCoverageProblem(
       // Solve the TSP problem
       exploration_path_ns::ExplorationPath local_path_itr;
 
-      RCLCPP_INFO(rclcpp::get_logger("local_coverage_planner"), "正在第一次调用SolveTSP函数");
+      // RCLCPP_INFO(rclcpp::get_logger("local_coverage_planner"), "正在第1次调用SolveTSP函数");
       local_path_itr =
           SolveTSP(selected_viewpoint_indices_itr, ordered_viewpoint_indices);
 
@@ -849,7 +849,7 @@ LocalCoveragePlanner::SolveLocalCoverageProblem(
         select_viewpoint_timer.GetDuration(kRuntimeUnit); // 获取计时器的持续时间并累加
 
     // 打印正在第几次调用SolveTSP函数
-    RCLCPP_INFO(rclcpp::get_logger("local_coverage_planner"), "正在第2次调用SolveTSP函数");
+    // RCLCPP_INFO(rclcpp::get_logger("local_coverage_planner"), "正在第2次调用SolveTSP函数");
     
     local_path =
         SolveTSP(selected_viewpoint_indices_itr, ordered_viewpoint_indices);

@@ -403,7 +403,7 @@ void PlanningEnv::GetUncoveredArea(const std::shared_ptr<viewpoint_manager_ns::V
       uncovered_point_num++; // 增加未覆盖点的数量
     }
   }
-  RCLCPP_INFO(rclcpp::get_logger("planning_env"), "点云中g值大于0的点数量: %d，添加到视点管理器点的普通点数量: %d，总共点云数量: %d", g_greater_than_zero_count, uncovered_point_num, planner_cloud_->cloud_->points.size());
+  // RCLCPP_INFO(rclcpp::get_logger("planning_env"), "点云中g值大于0的点数量: %d，添加到视点管理器点的普通点数量: %d，总共点云数量: %d", g_greater_than_zero_count, uncovered_point_num, planner_cloud_->cloud_->points.size());
 
 
   // 检查未覆盖的前沿点
