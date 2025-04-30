@@ -23,8 +23,8 @@ tare_planner_node:
     kExtendWayPoint : true                      # 原值true
     kUseLineOfSightLookAheadPoint : true
     kNoExplorationReturnHome : true
-    kExtendWayPointDistanceBig : 2.0             # 原值8.0 超过雷达距离一点
-    kExtendWayPointDistanceSmall : 1.5            # 原值3.5 和雷达距离一致
+    kExtendWayPointDistanceBig : 4.0             # 原值8.0 超过雷达距离一点
+    kExtendWayPointDistanceSmall : 3.0            # 原值3.5 和雷达距离一致
     kKeyposeCloudDwzFilterLeafSize : 0.2
     kRushHomeDist : 5.0
     kAtHomeDistThreshold : 0.5
@@ -48,7 +48,7 @@ tare_planner_node:
     rolling_occupancy_grid/resolution_z : 0.3
 
     kSurfaceCloudDwzLeafSize : 0.3
-    kCollisionCloudDwzLeafSize : 0.1          # 碰撞坚持点云分辨率 原值0.2   0.1
+    kCollisionCloudDwzLeafSize : 0.1          # 碰撞坚持点云分辨率 原值0.2
     kKeyposeCloudStackNum : 5
     kPointCloudRowNum : 50
     kPointCloudColNum : 50
@@ -79,8 +79,7 @@ tare_planner_node:
     kConnectivityHeightDiffThr : 0.25
     kGreedyViewPointSampleRange : 3
     kLocalPathOptimizationItrMax : 10
-    # kViewPointCollisionMargin 的2倍要大于 viewpoint_manager/resolution_x 不然waypoint穿墙
-    kViewPointCollisionMargin : 0.1                # 视点碰撞检查边距 原值 0.6 如果这个范围内有障碍物，说明当前viewpoint有碰撞风险，不可选 0.15
+    kViewPointCollisionMargin : 0.15                # 视点碰撞检查边距 原值 0.6 如果这个范围内有障碍物，说明当前viewpoint有碰撞风险，不可选
     kViewPointCollisionMarginZPlus : 0.5
     kViewPointCollisionMarginZMinus : 0.5
     kCollisionGridZScale : 1.0
@@ -94,7 +93,7 @@ tare_planner_node:
     kCheckDynamicObstacleCollision : false
     kCollisionFrameCountMax : 3
 
-    kSensorRange : 3.5                # 激光点云覆盖的举例,原值3.5
+    kSensorRange : 5.5                  # 激光点云覆盖的举例,原值3.5
     kNeighborRange : 1.0                # 默认值 3.0  这个决定小方块大小
     kCoverageOcclusionThr : 0.3         # 原址0.3 用于在视点管理和可见性计算中处理遮挡情况，确保算法能够更准确地判断哪些点是可见的
     kCoverageDilationRadius : 0.5
@@ -105,9 +104,9 @@ tare_planner_node:
     kGridWorldZNum : 121
     kGridWorldCellHeight : 3.0
     kGridWorldNearbyGridNum : 5
-    kMinAddPointNumSmall : 3            # 视点最小覆盖的点数量 ,原值30，15是测试下来的极限值，不要动了
+    kMinAddPointNumSmall : 9            # 视点最小覆盖的点数量 ,原值30，15是测试下来的极限值，不要动了
     kMinAddPointNumBig : 50
-    kMinAddFrontierPointNum : 1         # 视点最小覆盖的前沿点数量,原值10，5是测试下来的极限值，不要动了
+    kMinAddFrontierPointNum : 3         # 视点最小覆盖的前沿点数量,原值10，5是测试下来的极限值，不要动了
     kCellExploringToCoveredThr : 1
     kCellCoveredToExploringThr: 10
     kCellExploringToAlmostCoveredThr: 10

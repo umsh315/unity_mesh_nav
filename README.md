@@ -95,12 +95,9 @@ colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
    ./system_real_robot_with_route_planner.sh
    ./system_real_robot_with_exploration_planner.sh
 
+#### 启动AI运控
 
-
-1、卡在桌子下面，因为传感器没办法测出类似门框高度的障碍
-2、不能有架子腿，椅子腿
-3、最好不要有直角转弯
-4、有足够空间原地转弯掉头（如果上方雷达可以尝试倒着走）
+ros2 launch go2_cmd go2_ai_cmd_test.launch.py
 
 
 

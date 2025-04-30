@@ -148,7 +148,7 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: Intensity
       Decay Time: 0
-      Enabled: false
+      Enabled: true
       Invert Rainbow: true
       Max Color: 255; 255; 255
       Max Intensity: 0.10000000149011612
@@ -169,7 +169,7 @@ Visualization Manager:
         Value: /terrain_map
       Use Fixed Frame: true
       Use rainbow: true
-      Value: false
+      Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: false
       Autocompute Value Bounds:
@@ -462,18 +462,18 @@ Visualization Manager:
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 3.599553108215332
-        Y: 6.861110210418701
-        Z: 1.7297619581222534
+        X: 4.350450038909912
+        Y: 4.828860282897949
+        Z: 1.9049837589263916
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.31979668140411377
+      Pitch: 1.2747960090637207
       Target Frame: map
       Value: Orbit (rviz)
-      Yaw: 4.538611888885498
+      Yaw: 3.193608522415161
     Saved: ~
 Window Geometry:
   Displays:
