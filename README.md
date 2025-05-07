@@ -101,7 +101,6 @@ ros2 launch go2_cmd go2_ai_cmd_test.launch.py
 
 
 
-
 #### 启动相机驱动：
    1. 在新的终端中：
       - 进入代码库文件夹
