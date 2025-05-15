@@ -30,7 +30,7 @@ void WaypointTool::onInitialize()
     [this](rclcpp::QoS profile) {this->qos_profile_ = profile;});
   setName("Waypoint");
   updateTopic();
-  vehicle_z = 0;
+  vehicle_z = 0;        //初始时为0
 }
 
 void WaypointTool::updateTopic()
@@ -83,7 +83,7 @@ void WaypointTool::onPoseSet(double x, double y, double theta)
   waypoint.header.stamp = joy.header.stamp;
   waypoint.point.x = x;
   waypoint.point.y = y;
-  waypoint.point.z = vehicle_z;
+  waypoint.point.z = vehicle_z;       //航点的z轴限制位车辆高度
 
   pub_->publish(waypoint);
   usleep(10000);

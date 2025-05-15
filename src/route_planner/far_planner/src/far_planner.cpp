@@ -376,39 +376,39 @@ void FARMaster::LocalBoundaryHandler(const std::vector<PointPair>& local_boundar
 
 
 Point3D FARMaster::ProjectNavWaypoint(const NavNodePtr& nav_node_ptr, const NavNodePtr& last_point_ptr) {
-  bool is_momentum = false;
+  bool is_momentum = false; // 初始化动量标志为false
   if (last_point_ptr == nav_node_ptr || (last_point_ptr != NULL && (last_point_ptr->position - nav_node_ptr_->position).norm() < FARUtil::kNearDist)) {
-    is_momentum = true;
+    is_momentum = true; // 如果当前节点和上一个节点相同或非常接近，设置动量标志为true
   }
-  Point3D waypoint = nav_node_ptr->position;
-  float free_dist = master_params_.local_planner_range;
-  const Point3D extend_p = this->ExtendViewpointOnObsCloud(nav_node_ptr_, FARUtil::surround_obs_cloud_, free_dist);
-  free_dist = std::max(free_dist, master_params_.robot_dim * 2.5f);
+  Point3D waypoint = nav_node_ptr->position; // 初始化航点为当前导航节点的位置
+  float free_dist = master_params_.local_planner_range; // 设置自由距离为局部规划器的范围
+  const Point3D extend_p = this->ExtendViewpointOnObsCloud(nav_node_ptr_, FARUtil::surround_obs_cloud_, free_dist); // 在障碍物云上扩展视点
+  free_dist = std::max(free_dist, master_params_.robot_dim * 2.5f); // 更新自由距离，确保至少为机器人尺寸的2.5倍
   if (master_params_.is_viewpoint_extend) {
-    waypoint = extend_p;
-    planner_viz_.VizViewpointExtend(nav_node_ptr_, waypoint);
+    waypoint = extend_p; // 如果启用了视点扩展，更新航点
+    planner_viz_.VizViewpointExtend(nav_node_ptr_, waypoint); // 可视化扩展的视点
   }
-  const Point3D diff_p = waypoint - robot_pos_;
-  Point3D new_heading;
+  const Point3D diff_p = waypoint - robot_pos_; // 计算航点与机器人当前位置的差值
+  Point3D new_heading; // 声明新的航向
   if (is_momentum && nav_heading_.norm() > FARUtil::kEpsilon) {
-    const float hdist = free_dist / 2.0f;
-    const float ratio = std::min(hdist, diff_p.norm()) / hdist;
-    new_heading = diff_p.normalize() * ratio + nav_heading_ * (1.0f - ratio);
+    const float hdist = free_dist / 2.0f; // 计算半距离
+    const float ratio = std::min(hdist, diff_p.norm()) / hdist; // 计算比率
+    new_heading = diff_p.normalize() * ratio + nav_heading_ * (1.0f - ratio); // 使用动量计算新的航向
   } else {
-    new_heading = diff_p.normalize();
+    new_heading = diff_p.normalize(); // 如果没有动量，直接使用差值的归一化作为新航向
   }
-  if (nav_heading_.norm() > FARUtil::kEpsilon && new_heading.norm_dot(nav_heading_) < 0.0f) { // negative direction reproject
-    Point3D temp_heading(nav_heading_.y, -nav_heading_.x, nav_heading_.z);
+  if (nav_heading_.norm() > FARUtil::kEpsilon && new_heading.norm_dot(nav_heading_) < 0.0f) { // 如果新航向与当前航向方向相反
+    Point3D temp_heading(nav_heading_.y, -nav_heading_.x, nav_heading_.z); // 计算垂直于当前航向的临时航向
     if (temp_heading.norm_dot(new_heading) < 0.0f) {
-      temp_heading.x = -temp_heading.x, temp_heading.y = -temp_heading.y;
+      temp_heading.x = -temp_heading.x, temp_heading.y = -temp_heading.y; // 如果临时航向与新航向方向相反，翻转临时航向
     }
-    new_heading = temp_heading;
+    new_heading = temp_heading; // 使用临时航向作为新航向
   }
-  nav_heading_ = new_heading.normalize();
+  nav_heading_ = new_heading.normalize(); // 更新并归一化航向
   if (diff_p.norm() < free_dist) {
-    waypoint = waypoint + nav_heading_ * (free_dist - diff_p.norm());
+    waypoint = waypoint + nav_heading_ * (free_dist - diff_p.norm()); // 如果距离小于自由距离，延伸航点
   }
-  return waypoint;
+  return waypoint; // 返回计算得到的航点
 }
 
 Point3D FARMaster::ExtendViewpointOnObsCloud(const NavNodePtr& nav_node_ptr, const PointCloudPtr& obsCloudIn, float& free_dist) {

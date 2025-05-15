@@ -4,7 +4,7 @@ far_planner:
     main_run_freq: 5.0
     voxel_dim: 0.1  # Unit: meter
     robot_dim: 0.6   # Unit: meter
-    vehicle_height: 0.5  # Unit: meter
+    vehicle_height: 0.5  # Unit: meter          # 限制目标点z轴高度最低值 地形高度 + 车辆高度
     sensor_range: 10.0  # Unit: meter
     terrain_range: 7.5   # Unit: meter
     local_planner_range: 2.5   # Unit: meter
@@ -22,7 +22,7 @@ far_planner:
     graph_msger/robot_id: 1  # graph from robot id "0" is extracted from files
 
     # Map Handler Params
-    map_handler/floor_height: 2.0    # Unit: meter
+    map_handler/floor_height: 2.0    # Unit: meter     最大高度 = 地形高度 + 可容忍高度差     限制目标点z轴高度
     map_handler/cell_length: 2.5    # Unit: meter
     map_handler/map_grid_max_length: 200.0  # Unit: meter
     map_handler/map_grad_max_height: 10.0   # Unit: meter
