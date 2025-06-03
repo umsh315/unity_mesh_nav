@@ -148,7 +148,7 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: Intensity
       Decay Time: 0
-      Enabled: true
+      Enabled: false
       Invert Rainbow: true
       Max Color: 255; 255; 255
       Max Intensity: 0.10000000149011612
@@ -169,7 +169,7 @@ Visualization Manager:
         Value: /terrain_map
       Use Fixed Frame: true
       Use rainbow: true
-      Value: true
+      Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: false
       Autocompute Value Bounds:
@@ -271,9 +271,12 @@ Visualization Manager:
       Name: Goalpoint
       Namespaces:
         clear_nodes: false
+        free_goal: true
         free_odom_position: false
         last_nav_node: false
+        original_goal: true
         out_contour: false
+        waypoint: true
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -319,7 +322,7 @@ Visualization Manager:
       Enabled: true
       Name: GlobalPath
       Namespaces:
-        {}
+        global_path: true
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -344,7 +347,10 @@ Visualization Manager:
       Enabled: true
       Name: ViewpointExtend
       Namespaces:
-        {}
+        corner_direct: true
+        extend_viewpoint: true
+        origin_viewpoint: true
+        raytracing_line: true
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -455,25 +461,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 29.174943923950195
+      Distance: 14.528680801391602
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 4.350450038909912
-        Y: 4.828860282897949
-        Z: 1.9049837589263916
+        X: 2.7266287803649902
+        Y: 3.400085926055908
+        Z: 2.336519241333008
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.2747960090637207
+      Pitch: 1.3297960758209229
       Target Frame: map
       Value: Orbit (rviz)
-      Yaw: 3.193608522415161
+      Yaw: 2.468606948852539
     Saved: ~
 Window Geometry:
   Displays:
