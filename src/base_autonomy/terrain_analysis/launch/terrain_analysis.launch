@@ -26,11 +26,11 @@
     <param name="noDataAreaMaxX" value="1.8" />
     <param name="noDataAreaMinY" value="-0.9" />
     <param name="noDataAreaMaxY" value="0.9" />
-    <param name="vehicleHeight" value="0.366" />               # 地面到传感器距离 原址1.5
+    <param name="vehicleHeight" value="1.5" />               # 地面到传感器距离 原址1.5
     <param name="voxelPointUpdateThre" value="100" />
     <param name="voxelTimeUpdateThre" value="2.0" />
-    <param name="minRelZ" value="-0.5" />                   # 以传感器为起点，点云处理的最小高度，原值-1.5
-    <param name="maxRelZ" value="2.0" />                    # 以传感器为起点，点云处理的最大高度，原址0.5
+    <param name="minRelZ" value="-1.5" />                   # 以传感器为起点，点云处理的最小高度，原值-1.5
+    <param name="maxRelZ" value="0.5" />                    # 以传感器为起点，点云处理的最大高度，原址0.5
     <param name="disRatioZ" value="0.2" />
   </node>
 
