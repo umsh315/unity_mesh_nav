@@ -23,6 +23,9 @@ setup(
             'transform_everything = transform_sensors.transform_everything:main',
             'transform_hesai = transform_sensors.transform_hesai:main',
             'transform_hesai_on_pc2 = transform_sensors.transform_hesai_on_pc2:main',
+
+            'transform_hesai_process = transform_sensors.transform_hesai_process:main',
+            'sensor_fusion = transform_sensors.sensor_fusion:main',
         ],
     },
 )
