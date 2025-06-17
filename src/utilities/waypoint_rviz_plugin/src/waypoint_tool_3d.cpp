@@ -67,6 +67,12 @@ void WaypointTool3D::onPoseSet(double x, double y, double z, double /*theta*/)
   // 创建Joy消息
   sensor_msgs::msg::Joy joy;
 
+  // 添加日志输出
+  RCLCPP_INFO(
+    context_->getRosNodeAbstraction().lock()->get_raw_node()->get_logger(),
+    "设置3D导航点 - 坐标: (%.2f, %.2f, %.2f)",
+    x, y, z);
+
   // 设置Joy消息的axes数组
   joy.axes.push_back(0);
   joy.axes.push_back(0);
