@@ -229,39 +229,39 @@ int main(int argc, char** argv)
     float disY = vehicleY - waypoints->points[wayPointID].y;
     float disZ = vehicleZ - waypoints->points[wayPointID].z;
 
-    // start waiting if the current waypoint is reached
-    if (sqrt(disX * disX + disY * disY) < waypointXYRadius && fabs(disZ) < waypointZBound && !isWaiting) {
-      waitTimeStart = curTime;
-      isWaiting = true;
+    // 如果到达当前航点，开始等待 // start waiting if the current waypoint is reached
+    if (sqrt(disX * disX + disY * disY) < waypointXYRadius && fabs(disZ) < waypointZBound && !isWaiting) { // 检查是否到达航点
+      waitTimeStart = curTime; // 记录等待开始时间
+      isWaiting = true; // 设置等待状态为真
     }
 
-    // move to the next waypoint after waiting is over
-    if (isWaiting && waitTimeStart + waitTime < curTime && wayPointID < waypointSize - 1) {
-      wayPointID++;
-      isWaiting = false;
+    // 等待结束后移动到下一个航点 // move to the next waypoint after waiting is over
+    if (isWaiting && waitTimeStart + waitTime < curTime && wayPointID < waypointSize - 1) { // 检查是否等待结束且还有下一个航点
+      wayPointID++; // 航点ID加1
+      isWaiting = false; // 重置等待状态
     }
 
-    // publish waypoint, speed, and boundary messages at certain frame rate
-    if (curTime - waypointTime > 1.0 / frameRate) {
-      if (!isWaiting) {
-        waypointMsgs.header.stamp = rclcpp::Time(static_cast<uint64_t>(curTime * 1e9));
-        waypointMsgs.point.x = waypoints->points[wayPointID].x;
-        waypointMsgs.point.y = waypoints->points[wayPointID].y;
-        waypointMsgs.point.z = waypoints->points[wayPointID].z;
-        pubWaypoint->publish(waypointMsgs);
+    // 以特定帧率发布航点、速度和边界消息 // publish waypoint, speed, and boundary messages at certain frame rate
+    if (curTime - waypointTime > 1.0 / frameRate) { // 检查是否到达发布时间
+      if (!isWaiting) { // 如果不在等待状态
+        waypointMsgs.header.stamp = rclcpp::Time(static_cast<uint64_t>(curTime * 1e9)); // 设置时间戳
+        waypointMsgs.point.x = waypoints->points[wayPointID].x; // 设置航点x坐标
+        waypointMsgs.point.y = waypoints->points[wayPointID].y; // 设置航点y坐标
+        waypointMsgs.point.z = waypoints->points[wayPointID].z; // 设置航点z坐标
+        pubWaypoint->publish(waypointMsgs); // 发布航点消息
       }
 
-      if (sendSpeed) {
-        speedMsgs.data = speed;
-        pubSpeed->publish(speedMsgs);
+      if (sendSpeed) { // 如果需要发送速度
+        speedMsgs.data = speed; // 设置速度数据
+        pubSpeed->publish(speedMsgs); // 发布速度消息
       }
 
-      if (sendBoundary) {
-        boundaryMsgs.header.stamp = rclcpp::Time(static_cast<uint64_t>(curTime * 1e9));
-        pubBoundary->publish(boundaryMsgs);
+      if (sendBoundary) { // 如果需要发送边界
+        boundaryMsgs.header.stamp = rclcpp::Time(static_cast<uint64_t>(curTime * 1e9)); // 设置时间戳
+        pubBoundary->publish(boundaryMsgs); // 发布边界消息
       }
 
-      waypointTime = curTime;
+      waypointTime = curTime; // 更新上次发布时间
     }
 
     status = rclcpp::ok();

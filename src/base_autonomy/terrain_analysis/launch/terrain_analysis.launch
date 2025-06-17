@@ -1,4 +1,9 @@
 <launch>
+  <arg name="vehicleHeight" default="1.5"/>         # 代表机器人的总体高度，任何高度差超过机器人高度的点都被视为无效点
+  <arg name="minRelZ" default="-1.5"/>              # 用于第一步过滤，这个范围通常会比vehicleHeight大
+  <arg name="maxRelZ" default="0.5"/>
+  <arg name="noDataObstacle" default="true"/>
+
 
   <node pkg="terrain_analysis" exec="terrainAnalysis" name="terrainAnalysis" output="screen">
     <param name="scanVoxelSize" value="0.05" />
@@ -18,19 +23,19 @@
     <param name="minDyObsVFOV" value="-16.0" />
     <param name="maxDyObsVFOV" value="16.0" />
     <param name="minDyObsPointNum" value="1" />
-    <param name="noDataObstacle" value="true" />            
+    <param name="noDataObstacle" value="$(var noDataObstacle)" />            # 是否把无点云的位置定义为障碍物（如向下楼梯，坑洞）     
     <param name="noDataBlockSkipNum" value="0" />
     <param name="minBlockPointNum" value="10" />
     <param name="maxElevBelowVeh" value="-0.6" />
-    <param name="noDataAreaMinX" value="0.3" />
+    <param name="noDataAreaMinX" value="0.3" />                             # 以机器人中心为原点
     <param name="noDataAreaMaxX" value="1.8" />
     <param name="noDataAreaMinY" value="-0.9" />
     <param name="noDataAreaMaxY" value="0.9" />
-    <param name="vehicleHeight" value="1.5" />               # 地面到传感器距离 原址1.5
+    <param name="vehicleHeight" value="$(var vehicleHeight)" />               # 小于这个高度的点云，才会被认为是有效地形点 原值1.5 
     <param name="voxelPointUpdateThre" value="100" />
     <param name="voxelTimeUpdateThre" value="2.0" />
-    <param name="minRelZ" value="-1.5" />                   # 以传感器为起点，点云处理的最小高度，原值-1.5
-    <param name="maxRelZ" value="0.5" />                    # 以传感器为起点，点云处理的最大高度，原址0.5
+    <param name="minRelZ" value="$(var minRelZ)" />                   # 以机器人（odom)中心为起点，点云处理的最小高度，原值-1.5
+    <param name="maxRelZ" value="$(var maxRelZ)" />                    # 以机器人中心起点，点云处理的最大高度，原值0.5
     <param name="disRatioZ" value="0.2" />
   </node>
 
