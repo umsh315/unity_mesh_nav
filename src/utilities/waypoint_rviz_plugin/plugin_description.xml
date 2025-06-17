@@ -21,7 +21,7 @@
   
   <class
     name="waypoint_rviz_plugin/WaypointTool3D"
-    type="waypoint_rviz_plugin::WaypointTool"
+    type="waypoint_rviz_plugin::WaypointTool3D"
     base_class_type="rviz_common::Tool">
     <description>
       Tool for setting 3D navigation waypoints.

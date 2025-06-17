@@ -1,9 +1,7 @@
-#ifndef WAYPOINT_TOOL_H
-#define WAYPOINT_TOOL_H
-
+#ifndef WAYPOINT_TOOL_3D_H
+#define WAYPOINT_TOOL_3D_H
 
 #include <QObject>
-
 #include <sstream>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp/qos.hpp>
@@ -30,38 +28,29 @@ class QosProfileProperty;
 
 namespace waypoint_rviz_plugin
 {
-class WaypointTool : public dddmr_rviz_default_plugins::tools::PoseTool
+class WaypointTool3D : public dddmr_rviz_default_plugins::tools::PoseTool
 {
   Q_OBJECT
 public:
-  WaypointTool();
-  
-  ~WaypointTool() override;
-  
+  WaypointTool3D();
+  ~WaypointTool3D() override;
   virtual void onInitialize() override;
 
 protected:
-  void odomHandler(const nav_msgs::msg::Odometry::ConstSharedPtr odom);
   void onPoseSet(double x, double y, double z, double theta) override;
-
 
 private Q_SLOTS:
   void updateTopic();
 
 private:
-
-  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr sub_;
   rclcpp::Publisher<geometry_msgs::msg::PointStamped>::SharedPtr pub_;
   rclcpp::Publisher<sensor_msgs::msg::Joy>::SharedPtr pub_joy_;
-  
   rclcpp::Clock::SharedPtr clock_;
   
-  rviz_common::properties::StringProperty * topic_property_;
-  rviz_common::properties::QosProfileProperty * qos_profile_property_;
-
+  rviz_common::properties::StringProperty* topic_property_;
+  rviz_common::properties::QosProfileProperty* qos_profile_property_;
   rclcpp::QoS qos_profile_;
 };
 }
 
-
-#endif  // WAYPOINT_RVIZ_PLUGIN_WAYPOINT_TOOL_H
+#endif  // WAYPOINT_TOOL_3D_H
