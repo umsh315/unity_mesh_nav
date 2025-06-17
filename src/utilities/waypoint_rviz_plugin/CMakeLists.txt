@@ -25,23 +25,28 @@ find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(dddmr_rviz_default_plugins REQUIRED)
 
 set(CMAKE_AUTOMOC ON)
 
+# 添加2D/3D工具的头文件
 set(HDR_FILES
     include/waypoint_tool.hpp
+    include/waypoint_tool_3d.hpp
 )
 
 foreach(header "${HDR_FILES}")
   qt5_wrap_cpp(rviz_plugins_moc_files "${header}")
 endforeach()
 
-set(HDR_FILES
-    include/waypoint_tool.hpp
-)
+# set(HDR_FILES
+#     include/waypoint_tool.hpp
+# )
 
+# 添加2D/3D工具的源文件
 set(SRC_FILES
   src/waypoint_tool.cpp
+  src/waypoint_tool_3d.cpp
 )
 
 include_directories(include)
@@ -58,6 +63,7 @@ ament_target_dependencies(${PROJECT_NAME}
   "rviz_default_plugins"
   "rviz2"
   "std_msgs"
+  "dddmr_rviz_default_plugins" 
   )
 
 target_include_directories(${PROJECT_NAME} PUBLIC
@@ -68,6 +74,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
   ${rviz_rendering}
   ${rviz_default_plugins}
   ${pluginlib}
+  ${dddmr_rviz_default_plugins_LIBRARIES}
 )
 
 pluginlib_export_plugin_description_file(rviz_common plugin_description.xml)
@@ -80,7 +87,9 @@ ament_export_dependencies(
   sensor_msgs
   rviz_default_plugins
   rviz2
-  std_msgs)
+  std_msgs
+  dddmr_rviz_default_plugins
+  )
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

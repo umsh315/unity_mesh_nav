@@ -1,9 +1,30 @@
-<library path="waypoint_rviz_plugin">
+<!-- <library path="waypoint_rviz_plugin">
   <class name="waypoint_rviz_plugin/WaypointTool"
          type="waypoint_rviz_plugin::WaypointTool"
          base_class_type="rviz_common::Tool">
     <description>
       A tool for sending waypoints
+    </description>
+  </class>
+</library>
+ -->
+
+<library path="${PROJECT_NAME}">
+  <class
+    name="waypoint_rviz_plugin/WaypointTool"
+    type="waypoint_rviz_plugin::WaypointTool"
+    base_class_type="rviz_common::Tool">
+    <description>
+      Tool for setting 2D navigation waypoints.
+    </description>
+  </class>
+  
+  <class
+    name="waypoint_rviz_plugin/WaypointTool3D"
+    type="waypoint_rviz_plugin::WaypointTool"
+    base_class_type="rviz_common::Tool">
+    <description>
+      Tool for setting 3D navigation waypoints.
     </description>
   </class>
 </library>

@@ -21,6 +21,7 @@
   <depend>libqt5-gui</depend>
   <depend>libqt5-widgets</depend>
   <depend>pluginlib</depend>
+  <depend>dddmr_rviz_default_plugins</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
