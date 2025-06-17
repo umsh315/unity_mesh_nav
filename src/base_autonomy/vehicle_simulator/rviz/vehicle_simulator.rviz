@@ -10,7 +10,8 @@ Panels:
   - Class: rviz_common/Selection
     Name: Selection
   - Class: rviz_common/Tool Properties
-    Expanded: ~
+    Expanded:
+      - /3D Waypoint1
     Name: Tool Properties
     Splitter Ratio: 0.5886790156364441
   - Class: rviz_common/Views
@@ -406,6 +407,13 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: waypoint
+    - Class: waypoint_rviz_plugin/WaypointTool3D
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: waypoint_3d
   Transformation:
     Current:
       Class: rviz_default_plugins/TF
@@ -413,7 +421,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 30.069494247436523
+      Distance: 10.555598258972168
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -428,10 +436,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.04479742422699928
+      Pitch: 1.2597967386245728
       Target Frame: map
       Value: Orbit (rviz_default_plugins)
-      Yaw: 1.6004127264022827
+      Yaw: 2.1504130363464355
     Saved: ~
 Window Geometry:
   Displays:
