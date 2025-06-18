@@ -53,6 +53,11 @@ void WaypointTool::onPoseSet(double x, double y, double theta)
 {
   sensor_msgs::msg::Joy joy;
 
+  // 添加彩色日志输出
+  RCLCPP_INFO_STREAM(
+    context_->getRosNodeAbstraction().lock()->get_raw_node()->get_logger(),
+    "\033[1;32m[WaypointTool]\033[0m 设置2D导航点 - 坐标: (" << x << ", " << y << ")");
+
   joy.axes.push_back(0);
   joy.axes.push_back(0);
   joy.axes.push_back(-1.0);
