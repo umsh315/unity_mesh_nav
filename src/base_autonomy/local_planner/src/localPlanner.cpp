@@ -149,9 +149,41 @@ void odometryHandler(const nav_msgs::msg::Odometry::ConstSharedPtr odom)
   vehicleRoll = roll;
   vehiclePitch = pitch;
   vehicleYaw = yaw;
-  vehicleX = odom->pose.pose.position.x - cos(yaw) * sensorOffsetX + sin(yaw) * sensorOffsetY;
-  vehicleY = odom->pose.pose.position.y - sin(yaw) * sensorOffsetX - cos(yaw) * sensorOffsetY;
-  vehicleZ = odom->pose.pose.position.z;
+  
+  if (use3DMode) {
+    // 3D模式：考虑完整的3D传感器偏移变换
+    float cosRoll = cos(roll);
+    float sinRoll = sin(roll);
+    float cosPitch = cos(pitch);
+    float sinPitch = sin(pitch);
+    float cosYaw = cos(yaw);
+    float sinYaw = sin(yaw);
+    
+    // 应用完整的3D旋转变换到传感器偏移向量
+    // 第一步：Roll旋转（绕X轴）
+    float temp1X = sensorOffsetX;
+    float temp1Y = sensorOffsetY * cosRoll;  // 简化：假设传感器主要在XY平面
+    float temp1Z = sensorOffsetY * sinRoll;
+    
+    // 第二步：Pitch旋转（绕Y轴）
+    float temp2X = temp1X * cosPitch + temp1Z * sinPitch;
+    float temp2Y = temp1Y;
+    float temp2Z = -temp1X * sinPitch + temp1Z * cosPitch;
+    
+    // 第三步：Yaw旋转（绕Z轴）
+    float sensorOffsetWorldX = temp2X * cosYaw - temp2Y * sinYaw;
+    float sensorOffsetWorldY = temp2X * sinYaw + temp2Y * cosYaw;
+    float sensorOffsetWorldZ = temp2Z;
+    
+    vehicleX = odom->pose.pose.position.x - sensorOffsetWorldX;
+    vehicleY = odom->pose.pose.position.y - sensorOffsetWorldY;
+    vehicleZ = odom->pose.pose.position.z - sensorOffsetWorldZ;
+  } else {
+    // 标准模式：仅考虑Yaw旋转的传感器偏移（保持原始逻辑）
+    vehicleX = odom->pose.pose.position.x - cos(yaw) * sensorOffsetX + sin(yaw) * sensorOffsetY;
+    vehicleY = odom->pose.pose.position.y - sin(yaw) * sensorOffsetX - cos(yaw) * sensorOffsetY;
+    vehicleZ = odom->pose.pose.position.z;
+  }
 }
 
 void laserCloudHandler(const sensor_msgs::msg::PointCloud2::ConstSharedPtr laserCloud2)
@@ -1033,26 +1065,16 @@ int main(int argc, char** argv)
 
             if (dis <= pathRange / pathScale && dis <= relativeGoalDis / pathScale) {
               if (use3DMode) {
-                // 3D模式：进行完整的逆变换（机器人坐标系 → 世界坐标系）
+                // 3D模式：进行旋转变换，但保持相对于vehicle frame的坐标
                 // 第一步：应用路径旋转（rotAng）
                 float rotX = cos(rotAng) * x - sin(rotAng) * y;
                 float rotY = sin(rotAng) * x + cos(rotAng) * y;
                 float rotZ = z;
                 
-                // 第二步：Roll逆变换（绕X轴，逆时针）
-                float temp1X = rotX;
-                float temp1Y = rotY * cosVehicleRoll - rotZ * sinVehicleRoll;
-                float temp1Z = rotY * sinVehicleRoll + rotZ * cosVehicleRoll;
-                
-                // 第三步：Pitch逆变换（绕Y轴，逆时针）
-                float temp2X = temp1X * cosVehiclePitch + temp1Z * sinVehiclePitch;
-                float temp2Y = temp1Y;
-                float temp2Z = -temp1X * sinVehiclePitch + temp1Z * cosVehiclePitch;
-                
-                // 第四步：Yaw逆变换（绕Z轴，逆时针）
-                point.x = pathScale * (temp2X * cosVehicleYaw - temp2Y * sinVehicleYaw);
-                point.y = pathScale * (temp2X * sinVehicleYaw + temp2Y * cosVehicleYaw);
-                point.z = pathScale * temp2Z;
+                // 保持相对于vehicle frame，不进行全局坐标变换
+                point.x = pathScale * rotX;
+                point.y = pathScale * rotY;
+                point.z = pathScale * rotZ;
               } else {
                 // 标准模式：仅Yaw变换（原始逻辑）
                 point.x = pathScale * (cos(rotAng) * x - sin(rotAng) * y);
@@ -1061,9 +1083,10 @@ int main(int argc, char** argv)
               }
               point.intensity = 1.0;
 
-              path.poses[i].pose.position.x = point.x + vehicleX;
-              path.poses[i].pose.position.y = point.y + vehicleY;
-              path.poses[i].pose.position.z = point.z + vehicleZ;
+              // 统一使用vehicle frame，不加vehicle位置
+              path.poses[i].pose.position.x = point.x;
+              path.poses[i].pose.position.y = point.y;
+              path.poses[i].pose.position.z = point.z;
             } else {
               path.poses.resize(i);
               break;
@@ -1111,26 +1134,14 @@ int main(int argc, char** argv)
 
                 if (dis <= pathRange / pathScale && (dis <= (relativeGoalDis + goalClearRange) / pathScale || !pathCropByGoal)) {
                   if (use3DMode) {
-                    // 3D模式：进行完整的逆变换（机器人坐标系 → 世界坐标系）
-                    // 第一步：应用路径旋转（rotAng）
+                    // 3D模式：进行旋转变换，但保持相对于vehicle frame的坐标
                     float rotX = cos(rotAng) * x - sin(rotAng) * y;
                     float rotY = sin(rotAng) * x + cos(rotAng) * y;
                     float rotZ = z;
                     
-                    // 第二步：Roll逆变换（绕X轴，逆时针）
-                    float temp1X = rotX;
-                    float temp1Y = rotY * cosVehicleRoll - rotZ * sinVehicleRoll;
-                    float temp1Z = rotY * sinVehicleRoll + rotZ * cosVehicleRoll;
-                    
-                    // 第三步：Pitch逆变换（绕Y轴，逆时针）
-                    float temp2X = temp1X * cosVehiclePitch + temp1Z * sinVehiclePitch;
-                    float temp2Y = temp1Y;
-                    float temp2Z = -temp1X * sinVehiclePitch + temp1Z * cosVehiclePitch;
-                    
-                    // 第四步：Yaw逆变换（绕Z轴，逆时针）
-                    point.x = pathScale * (temp2X * cosVehicleYaw - temp2Y * sinVehicleYaw);
-                    point.y = pathScale * (temp2X * sinVehicleYaw + temp2Y * cosVehicleYaw);
-                    point.z = pathScale * temp2Z;
+                    point.x = pathScale * rotX;
+                    point.y = pathScale * rotY;
+                    point.z = pathScale * rotZ;
                   } else {
                     // 标准模式：仅Yaw变换（原始逻辑）
                     point.x = pathScale * (cos(rotAng) * x - sin(rotAng) * y);
