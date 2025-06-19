@@ -539,7 +539,7 @@ int main(int argc, char** argv)
   nh->declare_parameter<double>("pathRangeStep", pathRangeStep);
   nh->declare_parameter<bool>("pathRangeBySpeed", pathRangeBySpeed);
   nh->declare_parameter<bool>("pathCropByGoal", pathCropByGoal);
-  nh->declare_parameter<bool>("use3DMode", use3DMode);
+  nh->declare_parameter<bool>("use3DMode", use3DMode);                  //是否启用3d模式
   nh->declare_parameter<bool>("autonomyMode", autonomyMode);
   nh->declare_parameter<double>("autonomySpeed", autonomySpeed);
   nh->declare_parameter<double>("joyToSpeedDelay", joyToSpeedDelay);
