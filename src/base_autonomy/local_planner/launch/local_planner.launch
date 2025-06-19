@@ -12,8 +12,9 @@
   <arg name="goalX" default="0.0"/>
   <arg name="goalY" default="0.0"/>
   <arg name="is_real_robot" default="true"/>
-  <arg name="obstacleHeightThre" default="0.15"/>       # 原值0.15
+  <arg name="obstacleHeightThre" default="0.15"/>       # 原值0.15，在0.2m*0.2m的格子范围内
   <arg name="groundHeightThre" default="0.1"/>          # 原值0.1
+  <arg name="costHeightThre" default="0.1"/>            # 局部路径高度惩罚调节系数，值越小，相同的高度差会产生更大的惩罚
 
   <node pkg="local_planner" exec="localPlanner" name="localPlanner" output="screen">
     <param name="pathFolder" value="$(find-pkg-share local_planner)/paths" />
@@ -28,10 +29,10 @@
     <param name="checkObstacle" value="true" />
     <param name="checkRotObstacle" value="false" />
     <param name="adjacentRange" value="3.0" /> 
-    <param name="obstacleHeightThre" value="$(var obstacleHeightThre)" />        # 障碍物高度阈值，超过这个高度的认为是障碍物
+    <param name="obstacleHeightThre" value="$(var obstacleHeightThre)" />        # 障碍物高度阈值，超过这个高度的点被标记为障碍物点
     <param name="groundHeightThre" value="$(var groundHeightThre)" />           # 大于这个阈值，认为是不平整的地形，会增加路径的惩罚值
-    <param name="costHeightThre" value="0.1" />
-    <param name="costScore" value="0.02" />
+    <param name="costHeightThre" value="$(var costHeightThre)" />             
+    <param name="costScore" value="0.02" />                 # 限制penaltyScore >= costScore，高度差惩罚后的分值下限
     <param name="useCost" value="false" />
     <param name="pointPerPathThre" value="2" />             # 该参数影响对小型动态障碍物的处理
     <param name="minRelZ" value="-0.5" />                   # 只有在useTerrainAnalysis=false时才起作用

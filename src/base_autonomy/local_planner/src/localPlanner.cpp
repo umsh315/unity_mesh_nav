@@ -77,14 +77,17 @@ double minPathRange = 1.0;
 double pathRangeStep = 0.5;
 bool pathRangeBySpeed = true;
 bool pathCropByGoal = true;
+bool use3DMode = false;  // 是否启用完整3D模式（包含3D距离计算和完整坐标变换，适用于爬楼梯等复杂地形）
 bool autonomyMode = false;
 double autonomySpeed = 1.0;
 double joyToSpeedDelay = 2.0;
 double joyToCheckObstacleDelay = 5.0;
-double goalCloseDis = 1.0;
+double goalCloseDis_XY = 1.0;
 double goalClearRange = 0.5;
+double goalCloseDis_Z = 0.05;  // Z轴接近距离阈值，用于判断垂直方向是否接近目标
 double goalX = 0;
 double goalY = 0;
+double goalZ = 0;   //增加z轴目标点参数
 
 float joySpeed = 0;
 float joySpeedRaw = 0;
@@ -249,6 +252,7 @@ void goalHandler(const geometry_msgs::msg::PointStamped::ConstSharedPtr goal)
 {
   goalX = goal->point.x;
   goalY = goal->point.y;
+  goalZ = goal->point.z;   // 处理Z坐标
 }
 
 void speedHandler(const std_msgs::msg::Float32::ConstSharedPtr speed)
@@ -535,13 +539,17 @@ int main(int argc, char** argv)
   nh->declare_parameter<double>("pathRangeStep", pathRangeStep);
   nh->declare_parameter<bool>("pathRangeBySpeed", pathRangeBySpeed);
   nh->declare_parameter<bool>("pathCropByGoal", pathCropByGoal);
+  nh->declare_parameter<bool>("use3DMode", use3DMode);
   nh->declare_parameter<bool>("autonomyMode", autonomyMode);
   nh->declare_parameter<double>("autonomySpeed", autonomySpeed);
   nh->declare_parameter<double>("joyToSpeedDelay", joyToSpeedDelay);
   nh->declare_parameter<double>("joyToCheckObstacleDelay", joyToCheckObstacleDelay);
   nh->declare_parameter<double>("goalClearRange", goalClearRange);
+  nh->declare_parameter<double>("goalCloseDis_XY", goalCloseDis_XY);
+  nh->declare_parameter<double>("goalCloseDis_Z", goalCloseDis_Z);  // Z轴接近距离阈值，用于判断垂直方向是否接近目标
   nh->declare_parameter<double>("goalX", goalX);
   nh->declare_parameter<double>("goalY", goalY);
+  nh->declare_parameter<double>("goalZ", goalZ);            // 目标点Z坐标
 
   nh->get_parameter("pathFolder", pathFolder);
   nh->get_parameter("vehicleLength", vehicleLength);
@@ -575,14 +583,17 @@ int main(int argc, char** argv)
   nh->get_parameter("pathRangeStep", pathRangeStep);
   nh->get_parameter("pathRangeBySpeed", pathRangeBySpeed);
   nh->get_parameter("pathCropByGoal", pathCropByGoal);
+  nh->get_parameter("use3DMode", use3DMode);
   nh->get_parameter("autonomyMode", autonomyMode);
   nh->get_parameter("autonomySpeed", autonomySpeed);
   nh->get_parameter("joyToSpeedDelay", joyToSpeedDelay);
   nh->get_parameter("joyToCheckObstacleDelay", joyToCheckObstacleDelay);
-  nh->get_parameter("goalCloseDis", goalCloseDis);
   nh->get_parameter("goalClearRange", goalClearRange);
+  nh->get_parameter("goalCloseDis_XY", goalCloseDis_XY);
+  nh->get_parameter("goalCloseDis_Z", goalCloseDis_Z);  // Z轴接近距离阈值，用于判断垂直方向是否接近目标
   nh->get_parameter("goalX", goalX);
   nh->get_parameter("goalY", goalY);
+  nh->get_parameter("goalZ", goalZ);
 
   auto subOdometry = nh->create_subscription<nav_msgs::msg::Odometry>("/state_estimation", 5, odometryHandler);
 
@@ -688,9 +699,28 @@ int main(int argc, char** argv)
         float pointY1 = plannerCloud->points[i].y - vehicleY;
         float pointZ1 = plannerCloud->points[i].z - vehicleZ;
 
-        point.x = pointX1 * cosVehicleYaw + pointY1 * sinVehicleYaw;
-        point.y = -pointX1 * sinVehicleYaw + pointY1 * cosVehicleYaw;
-        point.z = pointZ1;
+        if (use3DMode) {
+          // 完整的3D坐标变换（与目标点变换保持一致）
+          // 第一步：Yaw旋转（绕Z轴）
+          float temp1X = pointX1 * cosVehicleYaw + pointY1 * sinVehicleYaw;
+          float temp1Y = -pointX1 * sinVehicleYaw + pointY1 * cosVehicleYaw;
+          float temp1Z = pointZ1;
+          
+          // 第二步：Pitch旋转（绕Y轴）
+          float temp2X = temp1X * cosVehiclePitch - temp1Z * sinVehiclePitch;
+          float temp2Y = temp1Y;
+          float temp2Z = temp1X * sinVehiclePitch + temp1Z * cosVehiclePitch;
+          
+          // 第三步：Roll旋转（绕X轴）
+          point.x = temp2X;
+          point.y = temp2Y * cosVehicleRoll + temp2Z * sinVehicleRoll;
+          point.z = -temp2Y * sinVehicleRoll + temp2Z * cosVehicleRoll;
+        } else {
+          // 简化变换：仅Yaw旋转
+          point.x = pointX1 * cosVehicleYaw + pointY1 * sinVehicleYaw;
+          point.y = -pointX1 * sinVehicleYaw + pointY1 * cosVehicleYaw;
+          point.z = pointZ1;
+        }
         point.intensity = plannerCloud->points[i].intensity;
 
         float dis = sqrt(point.x * point.x + point.y * point.y);
@@ -701,11 +731,32 @@ int main(int argc, char** argv)
 
       int boundaryCloudSize = boundaryCloud->points.size();
       for (int i = 0; i < boundaryCloudSize; i++) {
-        point.x = ((boundaryCloud->points[i].x - vehicleX) * cosVehicleYaw 
-                + (boundaryCloud->points[i].y - vehicleY) * sinVehicleYaw);
-        point.y = (-(boundaryCloud->points[i].x - vehicleX) * sinVehicleYaw 
-                + (boundaryCloud->points[i].y - vehicleY) * cosVehicleYaw);
-        point.z = boundaryCloud->points[i].z;
+        float pointX1 = boundaryCloud->points[i].x - vehicleX;
+        float pointY1 = boundaryCloud->points[i].y - vehicleY;
+        float pointZ1 = boundaryCloud->points[i].z - vehicleZ;
+
+        if (use3DMode) {
+          // 完整的3D坐标变换（与点云处理保持一致）
+          // 第一步：Yaw旋转（绕Z轴）
+          float temp1X = pointX1 * cosVehicleYaw + pointY1 * sinVehicleYaw;
+          float temp1Y = -pointX1 * sinVehicleYaw + pointY1 * cosVehicleYaw;
+          float temp1Z = pointZ1;
+          
+          // 第二步：Pitch旋转（绕Y轴）
+          float temp2X = temp1X * cosVehiclePitch - temp1Z * sinVehiclePitch;
+          float temp2Y = temp1Y;
+          float temp2Z = temp1X * sinVehiclePitch + temp1Z * cosVehiclePitch;
+          
+          // 第三步：Roll旋转（绕X轴）
+          point.x = temp2X;
+          point.y = temp2Y * cosVehicleRoll + temp2Z * sinVehicleRoll;
+          point.z = -temp2Y * sinVehicleRoll + temp2Z * cosVehicleRoll;
+        } else {
+          // 简化变换：仅Yaw旋转
+          point.x = pointX1 * cosVehicleYaw + pointY1 * sinVehicleYaw;
+          point.y = -pointX1 * sinVehicleYaw + pointY1 * cosVehicleYaw;
+          point.z = pointZ1;
+        }
         point.intensity = boundaryCloud->points[i].intensity;
 
         float dis = sqrt(point.x * point.x + point.y * point.y);
@@ -716,11 +767,32 @@ int main(int argc, char** argv)
 
       int addedObstaclesSize = addedObstacles->points.size();
       for (int i = 0; i < addedObstaclesSize; i++) {
-        point.x = ((addedObstacles->points[i].x - vehicleX) * cosVehicleYaw 
-                + (addedObstacles->points[i].y - vehicleY) * sinVehicleYaw);
-        point.y = (-(addedObstacles->points[i].x - vehicleX) * sinVehicleYaw 
-                + (addedObstacles->points[i].y - vehicleY) * cosVehicleYaw);
-        point.z = addedObstacles->points[i].z;
+        float pointX1 = addedObstacles->points[i].x - vehicleX;
+        float pointY1 = addedObstacles->points[i].y - vehicleY;
+        float pointZ1 = addedObstacles->points[i].z - vehicleZ;
+
+        if (use3DMode) {
+          // 完整的3D坐标变换（与点云处理保持一致）
+          // 第一步：Yaw旋转（绕Z轴）
+          float temp1X = pointX1 * cosVehicleYaw + pointY1 * sinVehicleYaw;
+          float temp1Y = -pointX1 * sinVehicleYaw + pointY1 * cosVehicleYaw;
+          float temp1Z = pointZ1;
+          
+          // 第二步：Pitch旋转（绕Y轴）
+          float temp2X = temp1X * cosVehiclePitch - temp1Z * sinVehiclePitch;
+          float temp2Y = temp1Y;
+          float temp2Z = temp1X * sinVehiclePitch + temp1Z * cosVehiclePitch;
+          
+          // 第三步：Roll旋转（绕X轴）
+          point.x = temp2X;
+          point.y = temp2Y * cosVehicleRoll + temp2Z * sinVehicleRoll;
+          point.z = -temp2Y * sinVehicleRoll + temp2Z * cosVehicleRoll;
+        } else {
+          // 简化变换：仅Yaw旋转
+          point.x = pointX1 * cosVehicleYaw + pointY1 * sinVehicleYaw;
+          point.y = -pointX1 * sinVehicleYaw + pointY1 * cosVehicleYaw;
+          point.z = pointZ1;
+        }
         point.intensity = addedObstacles->points[i].intensity;
 
         float dis = sqrt(point.x * point.x + point.y * point.y);
@@ -733,12 +805,58 @@ int main(int argc, char** argv)
       if (pathRangeBySpeed) pathRange = adjacentRange * joySpeed;
       if (pathRange < minPathRange) pathRange = minPathRange;
       float relativeGoalDis = adjacentRange;
+      float relativeGoalDisZ = 0.0;  // 初始化Z轴距离，用于3D导航
 
       if (autonomyMode) {
-        float relativeGoalX = ((goalX - vehicleX) * cosVehicleYaw + (goalY - vehicleY) * sinVehicleYaw);
-        float relativeGoalY = (-(goalX - vehicleX) * sinVehicleYaw + (goalY - vehicleY) * cosVehicleYaw);
+        // 计算目标点与车辆的差值（在条件判断前统一计算）
+        float deltaX = goalX - vehicleX;
+        float deltaY = goalY - vehicleY;
+        float deltaZ = goalZ - vehicleZ;
+        
+        float relativeGoalX, relativeGoalY, relativeGoalZ;
+        
+        if (use3DMode) {
+          // 对于爬楼梯等复杂地形，使用完整的3D坐标变换
+          float sinVehicleRoll = sin(vehicleRoll);
+          float cosVehicleRoll = cos(vehicleRoll);  
+          float sinVehiclePitch = sin(vehiclePitch);
+          float cosVehiclePitch = cos(vehiclePitch);
+          
+          // 完整的3D旋转变换（Yaw -> Pitch -> Roll）
+          // 第一步：Yaw旋转（绕Z轴）
+          float temp1X = deltaX * cosVehicleYaw + deltaY * sinVehicleYaw;
+          float temp1Y = -deltaX * sinVehicleYaw + deltaY * cosVehicleYaw;
+          float temp1Z = deltaZ;
+          
+          // 第二步：Pitch旋转（绕Y轴）
+          float temp2X = temp1X * cosVehiclePitch - temp1Z * sinVehiclePitch;
+          float temp2Y = temp1Y;
+          float temp2Z = temp1X * sinVehiclePitch + temp1Z * cosVehiclePitch;
+          
+          // 第三步：Roll旋转（绕X轴）
+          relativeGoalX = temp2X;
+          relativeGoalY = temp2Y * cosVehicleRoll + temp2Z * sinVehicleRoll;
+          relativeGoalZ = -temp2Y * sinVehicleRoll + temp2Z * cosVehicleRoll;
+        } else {
+          // 简化版本：仅进行Yaw旋转，适用于平地导航
+          relativeGoalX = (deltaX * cosVehicleYaw + deltaY * sinVehicleYaw);
+          relativeGoalY = (-deltaX * sinVehicleYaw + deltaY * cosVehicleYaw);
+          relativeGoalZ = deltaZ;  // 简单高度差
+        }
 
-        relativeGoalDis = sqrt(relativeGoalX * relativeGoalX + relativeGoalY * relativeGoalY);
+        // 分别计算XY平面距离和Z轴距离（适合地面机器人的运动特性）
+        float relativeGoalDisXY = sqrt(relativeGoalX * relativeGoalX + relativeGoalY * relativeGoalY);
+        relativeGoalDisZ = fabs(relativeGoalZ);
+        
+        // 更新relativeGoalDis：支持可配置的距离计算方式
+        if (use3DMode) {
+          // 复杂地形模式：使用3D欧几里得距离（适用于爬楼梯等场景）
+          relativeGoalDis = sqrt(relativeGoalDisXY * relativeGoalDisXY + relativeGoalDisZ * relativeGoalDisZ);
+        } else {
+          // 标准模式：使用XY距离（适用于平地和一般导航）
+          relativeGoalDis = relativeGoalDisXY;
+        }
+        
         joyDir = atan2(relativeGoalY, relativeGoalX) * 180 / PI;
 
         if (!twoWayDrive) {
@@ -769,8 +887,16 @@ int main(int argc, char** argv)
         for (int i = 0; i < plannerCloudCropSize; i++) {
           float x = plannerCloudCrop->points[i].x / pathScale;
           float y = plannerCloudCrop->points[i].y / pathScale;
+          float z = plannerCloudCrop->points[i].z / pathScale;  // 添加Z坐标
           float h = plannerCloudCrop->points[i].intensity;
-          float dis = sqrt(x * x + y * y);
+          
+          // 根据3D模式选择距离计算方式（与其他部分保持一致）
+          float dis;
+          if (use3DMode) {
+            dis = sqrt(x * x + y * y + z * z);
+          } else {
+            dis = sqrt(x * x + y * y);
+          }
 
           if (dis < pathRange / pathScale && (dis <= (relativeGoalDis + goalClearRange) / pathScale || !pathCropByGoal) && checkObstacle) {
             for (int rotDir = 0; rotDir < 36; rotDir++) {
@@ -851,8 +977,20 @@ int main(int argc, char** argv)
             if (rotDir < 18) rotDirW = fabs(fabs(rotDir - 9) + 1);
             else rotDirW = fabs(fabs(rotDir - 27) + 1);
             float groupDirW = 4  - fabs(pathList[i % pathNum] - 3);
-            float score = (1 - sqrt(sqrt(dirWeight * dirDiff))) * rotDirW * rotDirW * rotDirW * rotDirW * penaltyScore;
-            if (relativeGoalDis < goalCloseDis) score = (1 - sqrt(sqrt(dirWeight * dirDiff))) * groupDirW * groupDirW * penaltyScore;
+            
+            // 3D导航：分别判断XY和Z距离条件
+            bool goalCloseXY = (relativeGoalDisXY < goalCloseDis_XY);      // XY平面接近
+            bool goalCloseZ = (relativeGoalDisZ < goalCloseDis_Z);    // Z轴接近
+            
+            float score;
+            if (goalCloseXY && goalCloseZ) {
+              // 方法1：XY和Z都接近目标，使用groupDirW权重（更精细的方向控制）
+              score = (1 - sqrt(sqrt(dirWeight * dirDiff))) * groupDirW * groupDirW * penaltyScore;
+            } else {
+              // 方法2：距离目标较远，使用rotDirW权重（更灵活的旋转控制）
+              score = (1 - sqrt(sqrt(dirWeight * dirDiff))) * rotDirW * rotDirW * rotDirW * rotDirW * penaltyScore;
+            }
+            
             if (score > 0) {
               clearPathPerGroupScore[groupNum * rotDir + pathList[i % pathNum]] += score;
             }
@@ -884,12 +1022,48 @@ int main(int argc, char** argv)
             float x = startPaths[selectedGroupID]->points[i].x;
             float y = startPaths[selectedGroupID]->points[i].y;
             float z = startPaths[selectedGroupID]->points[i].z;
-            float dis = sqrt(x * x + y * y);
+            
+            // 根据3D模式选择距离计算方式（与障碍物检测保持一致）
+            float dis;
+            if (use3DMode) {
+              dis = sqrt(x * x + y * y + z * z);
+            } else {
+              dis = sqrt(x * x + y * y);
+            }
 
             if (dis <= pathRange / pathScale && dis <= relativeGoalDis / pathScale) {
-              path.poses[i].pose.position.x = pathScale * (cos(rotAng) * x - sin(rotAng) * y);
-              path.poses[i].pose.position.y = pathScale * (sin(rotAng) * x + cos(rotAng) * y);
-              path.poses[i].pose.position.z = pathScale * z;
+              if (use3DMode) {
+                // 3D模式：进行完整的逆变换（机器人坐标系 → 世界坐标系）
+                // 第一步：应用路径旋转（rotAng）
+                float rotX = cos(rotAng) * x - sin(rotAng) * y;
+                float rotY = sin(rotAng) * x + cos(rotAng) * y;
+                float rotZ = z;
+                
+                // 第二步：Roll逆变换（绕X轴，逆时针）
+                float temp1X = rotX;
+                float temp1Y = rotY * cosVehicleRoll - rotZ * sinVehicleRoll;
+                float temp1Z = rotY * sinVehicleRoll + rotZ * cosVehicleRoll;
+                
+                // 第三步：Pitch逆变换（绕Y轴，逆时针）
+                float temp2X = temp1X * cosVehiclePitch + temp1Z * sinVehiclePitch;
+                float temp2Y = temp1Y;
+                float temp2Z = -temp1X * sinVehiclePitch + temp1Z * cosVehiclePitch;
+                
+                // 第四步：Yaw逆变换（绕Z轴，逆时针）
+                point.x = pathScale * (temp2X * cosVehicleYaw - temp2Y * sinVehicleYaw);
+                point.y = pathScale * (temp2X * sinVehicleYaw + temp2Y * cosVehicleYaw);
+                point.z = pathScale * temp2Z;
+              } else {
+                // 标准模式：仅Yaw变换（原始逻辑）
+                point.x = pathScale * (cos(rotAng) * x - sin(rotAng) * y);
+                point.y = pathScale * (sin(rotAng) * x + cos(rotAng) * y);
+                point.z = pathScale * z;
+              }
+              point.intensity = 1.0;
+
+              path.poses[i].pose.position.x = point.x + vehicleX;
+              path.poses[i].pose.position.y = point.y + vehicleY;
+              path.poses[i].pose.position.z = point.z + vehicleZ;
             } else {
               path.poses.resize(i);
               break;
@@ -927,11 +1101,42 @@ int main(int argc, char** argv)
                 float y = point.y;
                 float z = point.z;
 
-                float dis = sqrt(x * x + y * y);
+                // 根据3D模式选择距离计算方式（与其他部分保持一致）
+                float dis;
+                if (use3DMode) {
+                  dis = sqrt(x * x + y * y + z * z);
+                } else {
+                  dis = sqrt(x * x + y * y);
+                }
+
                 if (dis <= pathRange / pathScale && (dis <= (relativeGoalDis + goalClearRange) / pathScale || !pathCropByGoal)) {
-                  point.x = pathScale * (cos(rotAng) * x - sin(rotAng) * y);
-                  point.y = pathScale * (sin(rotAng) * x + cos(rotAng) * y);
-                  point.z = pathScale * z;
+                  if (use3DMode) {
+                    // 3D模式：进行完整的逆变换（机器人坐标系 → 世界坐标系）
+                    // 第一步：应用路径旋转（rotAng）
+                    float rotX = cos(rotAng) * x - sin(rotAng) * y;
+                    float rotY = sin(rotAng) * x + cos(rotAng) * y;
+                    float rotZ = z;
+                    
+                    // 第二步：Roll逆变换（绕X轴，逆时针）
+                    float temp1X = rotX;
+                    float temp1Y = rotY * cosVehicleRoll - rotZ * sinVehicleRoll;
+                    float temp1Z = rotY * sinVehicleRoll + rotZ * cosVehicleRoll;
+                    
+                    // 第三步：Pitch逆变换（绕Y轴，逆时针）
+                    float temp2X = temp1X * cosVehiclePitch + temp1Z * sinVehiclePitch;
+                    float temp2Y = temp1Y;
+                    float temp2Z = -temp1X * sinVehiclePitch + temp1Z * cosVehiclePitch;
+                    
+                    // 第四步：Yaw逆变换（绕Z轴，逆时针）
+                    point.x = pathScale * (temp2X * cosVehicleYaw - temp2Y * sinVehicleYaw);
+                    point.y = pathScale * (temp2X * sinVehicleYaw + temp2Y * cosVehicleYaw);
+                    point.z = pathScale * temp2Z;
+                  } else {
+                    // 标准模式：仅Yaw变换（原始逻辑）
+                    point.x = pathScale * (cos(rotAng) * x - sin(rotAng) * y);
+                    point.y = pathScale * (sin(rotAng) * x + cos(rotAng) * y);
+                    point.z = pathScale * z;
+                  }
                   point.intensity = 1.0;
 
                   freePaths->push_back(point);

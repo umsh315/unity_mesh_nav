@@ -1,6 +1,7 @@
 #include <waypoint_tool_3d.hpp>
 
 #include <string>
+#include <nav_msgs/msg/odometry.hpp>
 
 #include <rviz_common/display_context.hpp>
 #include <rviz_common/logging.hpp>
@@ -42,6 +43,7 @@ void WaypointTool3D::onInitialize()
   setName("3D Waypoint");
   // 更新话题
   updateTopic();
+  vehicle_z = 0;  // 初始化机器人高度
 }
 
 // 更新话题函数
@@ -50,6 +52,11 @@ void WaypointTool3D::updateTopic()
   // 获取ROS节点
   rclcpp::Node::SharedPtr raw_node =
     context_->getRosNodeAbstraction().lock()->get_raw_node();
+  
+  // 订阅机器人状态
+  sub_ = raw_node->create_subscription<nav_msgs::msg::Odometry>(
+    "/state_estimation", 5,
+    std::bind(&WaypointTool3D::odomHandler, this, std::placeholders::_1));
   
   // 创建路径点发布者
   pub_ = raw_node->create_publisher<geometry_msgs::msg::PointStamped>(
@@ -61,22 +68,21 @@ void WaypointTool3D::updateTopic()
   clock_ = raw_node->get_clock();
 }
 
+void WaypointTool3D::odomHandler(const nav_msgs::msg::Odometry::ConstSharedPtr odom)
+{
+  vehicle_z = odom->pose.pose.position.z;
+}
+
 // 设置位姿的回调函数
 void WaypointTool3D::onPoseSet(double x, double y, double z, double /*theta*/)
 {
-  // 创建Joy消息
-  sensor_msgs::msg::Joy joy;
-
-  // // 添加日志输出
-  // RCLCPP_INFO(
-  //   context_->getRosNodeAbstraction().lock()->get_raw_node()->get_logger(),
-  //   "设置3D导航点 - 坐标: (%.2f, %.2f, %.2f)",
-  //   x, y, z);
-
   // 添加彩色日志输出
   RCLCPP_INFO_STREAM(
     context_->getRosNodeAbstraction().lock()->get_raw_node()->get_logger(),
-    "\033[1;34m[WaypointTool-3D]\033[0m 设置3D导航点 - 坐标: (" << x << ", " << y << ", " << z << ")");
+    "\033[1;34m[WaypointTool-3D]\033[0m 设置3D导航点 - 坐标: (" << x << ", " << y << ", " << z << "), 机器人当前高度: " << vehicle_z);
+
+  // 创建Joy消息
+  sensor_msgs::msg::Joy joy;
 
   // 设置Joy消息的axes数组
   joy.axes.push_back(0);
@@ -113,7 +119,7 @@ void WaypointTool3D::onPoseSet(double x, double y, double z, double /*theta*/)
   waypoint.header.stamp = joy.header.stamp;
   waypoint.point.x = x;
   waypoint.point.y = y;
-  waypoint.point.z = z;
+  waypoint.point.z = vehicle_z;  // 使用机器人当前高度
 
   // 发布路径点消息两次,确保消息被接收
   pub_->publish(waypoint);
