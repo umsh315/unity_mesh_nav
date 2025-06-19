@@ -805,7 +805,7 @@ int main(int argc, char** argv)
       if (pathRangeBySpeed) pathRange = adjacentRange * joySpeed;
       if (pathRange < minPathRange) pathRange = minPathRange;
       float relativeGoalDis = adjacentRange;
-      float relativeGoalDisZ = 0.0;  // 初始化Z轴距离，用于3D导航
+      float relativeGoalDisZ = 0.1;  // 初始化Z轴距离，用于3D导航
 
       if (autonomyMode) {
         // 计算目标点与车辆的差值（在条件判断前统一计算）
@@ -979,7 +979,7 @@ int main(int argc, char** argv)
             float groupDirW = 4  - fabs(pathList[i % pathNum] - 3);
             
             // 3D导航：分别判断XY和Z距离条件
-            bool goalCloseXY = (relativeGoalDisXY < goalCloseDis_XY);      // XY平面接近
+            bool goalCloseXY = (relativeGoalDis < goalCloseDis_XY);      // XY平面接近
             bool goalCloseZ = (relativeGoalDisZ < goalCloseDis_Z);    // Z轴接近
             
             float score;
