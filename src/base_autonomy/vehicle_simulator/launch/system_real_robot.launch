@@ -7,7 +7,8 @@
   <arg name="vehicleX" default="0.0"/>
   <arg name="vehicleY" default="0.0"/>
   <arg name="checkTerrainConn" default="true"/>
-  <arg name="use3DMode" default="false"/>
+  <arg name="use3DMode" default="true"/>
+  <arg name="noDataObstacle" default="false"/>
 
   <node pkg="joy" exec="joy_node" name="ps3_joy" output="screen" >
     <param name="dev" value="/dev/input/js0" />
@@ -32,7 +33,9 @@
     <arg name="use3DMode" value="$(var use3DMode)"/>
   </include>
 
-  <include file="$(find-pkg-share terrain_analysis)/launch/terrain_analysis.launch" />
+  <include file="$(find-pkg-share terrain_analysis)/launch/terrain_analysis.launch">
+    <arg name="noDataObstacle" value="$(var noDataObstacle)" />
+  </include>
 
   <!-- <include file="$(find-pkg-share terrain_analysis_ext)/launch/terrain_analysis_ext.launch" >
     <arg name="checkTerrainConn" value="$(var checkTerrainConn)"/>
