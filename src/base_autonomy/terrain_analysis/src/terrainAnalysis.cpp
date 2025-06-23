@@ -29,9 +29,10 @@
 #include "rmw/types.h"
 #include "rmw/qos_profiles.h"
 
-#include "cloud_interpolation.hpp"
+#include "terrain_analysis/cloud_interpolation.hpp"
 
 using namespace std;
+using namespace terrain_analysis;       //CloudInterpolation 类是在 terrain_analysis 命名空间中定义的，要声明
 
 const double PI = 3.1415926;
 
@@ -628,7 +629,10 @@ int main(int argc, char **argv) {
       }
 
       // 在初始5帧时进行点云插值
-      if (initFrameCount < 5 && systemInited) {
+      if (initFrameCount < 20 && systemInited) {
+          RCLCPP_INFO(nh->get_logger(), "Starting interpolation on frame %d, original points: %d", 
+                     initFrameCount, terrainCloudElev->size());
+          
           // 创建点云插值器实例
           CloudInterpolation interpolator;
           
@@ -654,16 +658,24 @@ int main(int argc, char **argv) {
           // maxElevBelowVeh: 相对于车辆的最大下方高度，用于过滤异常点
           interpolator.setParameters(planarVoxelSize, minBlockPointNum, maxElevBelowVeh);
           
+          RCLCPP_INFO(nh->get_logger(), "Parameters set - grid area: [%.2f, %.2f, %.2f, %.2f], voxel size: %.2f", 
+                     noDataAreaMinX, noDataAreaMaxX, noDataAreaMinY, noDataAreaMaxY, planarVoxelSize);
+          
           // 执行插值操作，返回插值后的点云
           pcl::PointCloud<pcl::PointXYZI>::Ptr interpolatedCloud = interpolator.interpolate();
           
           // 如果插值成功，将插值结果合并到原始点云中
           if (interpolatedCloud) {
               *terrainCloudElev += *interpolatedCloud;
+              RCLCPP_INFO(nh->get_logger(), "Interpolation completed, added %d points, total points: %d", 
+                         interpolatedCloud->size(), terrainCloudElev->size());
+          } else {
+              RCLCPP_WARN(nh->get_logger(), "Interpolation failed, no points added");
           }
           
           // 帧计数器加1
           initFrameCount++;
+          RCLCPP_INFO(nh->get_logger(), "Frame %d interpolation completed", initFrameCount);
       }
 
       if (noDataObstacle && noDataInited == 2) {
