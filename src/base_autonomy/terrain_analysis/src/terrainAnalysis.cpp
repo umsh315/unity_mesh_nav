@@ -29,6 +29,8 @@
 #include "rmw/types.h"
 #include "rmw/qos_profiles.h"
 
+#include "cloud_interpolation.hpp"
+
 using namespace std;
 
 const double PI = 3.1415926;
@@ -105,6 +107,8 @@ bool newlaserCloud = false;
 double systemInitTime = 0;
 bool systemInited = false;
 int noDataInited = 0;
+
+int initFrameCount = 0;  // 添加初始帧计数器
 
 float vehicleRoll = 0, vehiclePitch = 0, vehicleYaw = 0;
 float vehicleX = 0, vehicleY = 0, vehicleZ = 0;
@@ -237,6 +241,7 @@ int main(int argc, char **argv) {
   nh->declare_parameter<double>("minRelZ", minRelZ);
   nh->declare_parameter<double>("maxRelZ", maxRelZ);
   nh->declare_parameter<double>("disRatioZ", disRatioZ);
+  nh->declare_parameter<int>("initFrameCount", initFrameCount);
 
   nh->get_parameter("scanVoxelSize", scanVoxelSize);
   nh->get_parameter("decayTime", decayTime);
@@ -269,6 +274,7 @@ int main(int argc, char **argv) {
   nh->get_parameter("minRelZ", minRelZ);
   nh->get_parameter("maxRelZ", maxRelZ);
   nh->get_parameter("disRatioZ", disRatioZ);
+  nh->get_parameter("initFrameCount", initFrameCount);
 
   auto subOdometry = nh->create_subscription<nav_msgs::msg::Odometry>("/state_estimation", 5, odometryHandler);
 
@@ -619,6 +625,45 @@ int main(int argc, char **argv) {
             }
           }
         }
+      }
+
+      // 在初始5帧时进行点云插值
+      if (initFrameCount < 5 && systemInited) {
+          // 创建点云插值器实例
+          CloudInterpolation interpolator;
+          
+          // 设置输入点云数据
+          // terrainCloudElev 是已经经过地形分析处理的点云数据
+          // 包含了地面高程信息(intensity字段存储了相对高度)
+          interpolator.setInputCloud(terrainCloudElev);
+          
+          // 设置车辆当前位置作为参考点
+          // vehicleX, vehicleY, vehicleZ 是车辆在世界坐标系中的位置
+          // 用于计算相对位置和判断插值区域
+          interpolator.setVehiclePosition(vehicleX, vehicleY, vehicleZ);
+          
+          // 设置需要进行插值的区域范围
+          // noDataAreaMinX/MaxX/MinY/MaxY 定义了车辆周围需要被插值处理的区域
+          // 这个区域通常是在车辆前方的一个矩形区域
+          interpolator.setNoDataArea(noDataAreaMinX, noDataAreaMaxX, 
+                                  noDataAreaMinY, noDataAreaMaxY);
+          
+          // 设置插值算法的关键参数
+          // planarVoxelSize: 平面网格的大小，决定了插值的精度
+          // minBlockPointNum: 每个网格中最少需要的点数，用于判断是否需要插值
+          // maxElevBelowVeh: 相对于车辆的最大下方高度，用于过滤异常点
+          interpolator.setParameters(planarVoxelSize, minBlockPointNum, maxElevBelowVeh);
+          
+          // 执行插值操作，返回插值后的点云
+          pcl::PointCloud<pcl::PointXYZI>::Ptr interpolatedCloud = interpolator.interpolate();
+          
+          // 如果插值成功，将插值结果合并到原始点云中
+          if (interpolatedCloud) {
+              *terrainCloudElev += *interpolatedCloud;
+          }
+          
+          // 帧计数器加1
+          initFrameCount++;
       }
 
       if (noDataObstacle && noDataInited == 2) {
