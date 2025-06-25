@@ -1,11 +1,13 @@
 #include "../include/terrain_analysis/cloud_interpolation.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include <cmath>
 
 namespace terrain_analysis {
 
 CloudInterpolation::CloudInterpolation() : 
     groundCloud(new pcl::PointCloud<pcl::PointXYZI>()),         // 初始化地面点云指针
     fullCloud(new pcl::PointCloud<pcl::PointXYZI>()),          // 初始化完整点云指针
+    fullInfoCloud(new pcl::PointCloud<pcl::PointXYZI>()),      // 初始化完整信息点云指针
     patched_ground(new pcl::PointCloud<pcl::PointXYZI>()),     // 初始化补丁地面点云指针
     patched_ground_edge(new pcl::PointCloud<pcl::PointXYZI>()), // 初始化补丁地面边缘点云指针
     first_frame_count_(0) {                                     // 初始化首帧计数器
@@ -18,15 +20,9 @@ CloudInterpolation::CloudInterpolation() :
     minimum_range = 0.3;                                       // 最小检测范围
     maximum_range = 100.0;                                     // 最大检测范围
     distance_for_patch_between_rings = 1.0;                    // 扫描线间补丁距离阈值
-    
     scan_period = 0.05;                                        // 扫描周期
-    segment_theta = 60.0 * DEG_TO_RAD;                        // 分割角度阈值
-    segment_valid_point_num = 5;                              // 有效分割点数阈值
-    segment_valid_line_num = 3;                               // 有效分割线数阈值
     
     sensorMountAngle = 0.0;                                   // 传感器安装角度
-    ang_bottom = -15.0 * DEG_TO_RAD;                         // 底部扫描角度
-    ang_top = 15.0 * DEG_TO_RAD;                             // 顶部扫描角度
     
     // 初始化矩阵
     rangeMatrix.resize(N_SCAN, HORIZONTAL_SCAN);              // 调整距离矩阵大小
@@ -42,42 +38,70 @@ void CloudInterpolation::setLidarParams(int num_vertical_scans,
     N_SCAN = num_vertical_scans;                              // 设置垂直扫描线数
     HORIZONTAL_SCAN = num_horizontal_scans;                   // 设置水平扫描点数
     groundScanIndex = ground_scan_index;                      // 设置地面扫描线索引
-    ang_bottom = vertical_angle_bottom * DEG_TO_RAD;         // 设置底部扫描角度
-    ang_top = vertical_angle_top * DEG_TO_RAD;               // 设置顶部扫描角度
+    
+    // 与原始ImageProjection完全一致的角度处理（不保存vertical_angle_top）
     sensorMountAngle = sensor_mount_angle * DEG_TO_RAD;      // 设置传感器安装角度
     
-    // 重新计算角度分辨率
-    ang_resolution_X = (M_PI * 2) / HORIZONTAL_SCAN;         // 计算水平角分辨率
-    ang_resolution_Y = (ang_top - ang_bottom) / float(N_SCAN-1); // 计算垂直角分辨率
+    // 计算水平角分辨率
+    ang_resolution_X = (M_PI * 2) / HORIZONTAL_SCAN;         
+    
+    // 重要：先计算垂直角分辨率（使用原始的vertical_angle_bottom）
+    ang_resolution_Y = DEG_TO_RAD * (vertical_angle_top - vertical_angle_bottom) / float(N_SCAN-1);
+    
+    // 然后再进行ang_bottom的特殊变换（与原始代码完全一致）
+    ang_bottom = -(vertical_angle_bottom - 0.1) * DEG_TO_RAD;
     
     // 重新初始化矩阵
     rangeMatrix.resize(N_SCAN, HORIZONTAL_SCAN);             // 重置距离矩阵大小
     groundMatrix.resize(N_SCAN, HORIZONTAL_SCAN);            // 重置地面矩阵大小
+    
+    // 预分配点云内存（与原始ImageProjection保持一致）
+    const size_t cloud_size = N_SCAN * HORIZONTAL_SCAN;
+    fullCloud->points.resize(cloud_size);
+    fullInfoCloud->points.resize(cloud_size);
 }
 
 void CloudInterpolation::setProjectionParams(float scan_period_,
-                                           float segment_theta_,
-                                           float segment_valid_point_num_,
-                                           float segment_valid_line_num_,
                                            float maximum_detection_range_,
                                            float minimum_detection_range_,
                                            float distance_for_patch_between_rings_) {
     scan_period = scan_period_;                              // 设置扫描周期
-    segment_theta = segment_theta_ * DEG_TO_RAD;            // 设置分割角度阈值
-    segment_valid_point_num = segment_valid_point_num_;     // 设置有效分割点数阈值
-    segment_valid_line_num = segment_valid_line_num_;       // 设置有效分割线数阈值
     maximum_range = maximum_detection_range_;               // 设置最大检测范围
     minimum_range = minimum_detection_range_;               // 设置最小检测范围
     distance_for_patch_between_rings = distance_for_patch_between_rings_; // 设置扫描线间补丁距离阈值
 }
 
+void CloudInterpolation::resetParameters() {
+    // 与原始ImageProjection保持一致：先定义cloud_size
+    const size_t cloud_size = N_SCAN * HORIZONTAL_SCAN;
+    
+    // 与原始ImageProjection一致：只清空输出相关的点云，不清空补丁点云
+    // 注意：我们不清空groundCloud，因为它是输入点云
+    
+    // 重置矩阵大小和初始值
+    rangeMatrix.resize(N_SCAN, HORIZONTAL_SCAN);
+    groundMatrix.resize(N_SCAN, HORIZONTAL_SCAN);
+    rangeMatrix.setConstant(FLT_MAX);
+    groundMatrix.setZero();
+    
+    // 确保fullCloud和fullInfoCloud有正确的大小
+    fullCloud->points.resize(cloud_size);
+    fullInfoCloud->points.resize(cloud_size);
+    
+    // 初始化所有点为NaN (与原始ImageProjection完全一致)
+    pcl::PointXYZI nanPoint;
+    nanPoint.x = std::numeric_limits<float>::quiet_NaN();
+    nanPoint.y = std::numeric_limits<float>::quiet_NaN();
+    nanPoint.z = std::numeric_limits<float>::quiet_NaN();
+    // 注意：不设置intensity，保持与原始ImageProjection一致
+    
+    std::fill(fullCloud->points.begin(), fullCloud->points.end(), nanPoint);
+    std::fill(fullInfoCloud->points.begin(), fullInfoCloud->points.end(), nanPoint);
+}
+
 void CloudInterpolation::projectPointCloud() {
-    // 初始化
-    const size_t cloudSize = groundCloud->points.size();     // 获取点云大小
-    fullCloud->clear();                                      // 清空完整点云
-    fullCloud->points.resize(N_SCAN * HORIZONTAL_SCAN);     // 调整点云大小
-    rangeMatrix.setConstant(FLT_MAX);                       // 初始化距离矩阵
-    groundMatrix.setZero();                                 // 初始化地面矩阵
+    // 获取输入点云大小
+    const size_t cloudSize = groundCloud->points.size();
     
     // 遍历输入点云
     for (size_t i = 0; i < cloudSize; ++i) {
@@ -93,7 +117,7 @@ void CloudInterpolation::projectPointCloud() {
         float verticalAngle = std::asin(thisPoint.z / range);
 
         // 计算行索引
-        int rowIdn = (verticalAngle - ang_bottom) / ang_resolution_Y;
+        int rowIdn = (verticalAngle + ang_bottom) / ang_resolution_Y;
         if (rowIdn < 0 || rowIdn >= N_SCAN) {
             continue;
         }
@@ -132,6 +156,7 @@ void CloudInterpolation::projectPointCloud() {
         fullInfoCloud->points[index] = thisPoint;
         fullInfoCloud->points[index].intensity = range;
     }
+}
 
 void CloudInterpolation::findStartEndAngle() {
     if(groundCloud->empty()) return;                        // 检查点云是否为空
@@ -152,11 +177,10 @@ void CloudInterpolation::findStartEndAngle() {
 }
 
 void CloudInterpolation::groundRemoval() {
-    groundMatrix.setZero();                                 // 初始化地面矩阵
+    // 与原始ImageProjection完全一致：在groundRemoval开始时清空补丁点云
+    patched_ground->clear();
+    patched_ground_edge->clear();
     
-    patched_ground->clear();                               // 清空补丁地面点云
-    patched_ground_edge->clear();                          // 清空补丁地面边缘点云
-
     for (size_t j = 0; j < HORIZONTAL_SCAN; ++j) {         // 遍历每一列
         size_t ring_edge = 0;                              // 初始化环边缘索引
         size_t closest_ring_edge = groundScanIndex;        // 初始化最近环边缘索引
@@ -166,8 +190,8 @@ void CloudInterpolation::groundRemoval() {
             size_t lowerInd = j + (i)*HORIZONTAL_SCAN;     // 计算下方点索引
             size_t upperInd = j + (i + 1) * HORIZONTAL_SCAN; // 计算上方点索引
 
-            if (fullCloud->points[lowerInd].intensity == -1 ||
-                fullCloud->points[upperInd].intensity == -1) { // 检查点是否有效
+            if (std::isnan(fullCloud->points[lowerInd].x) || std::isnan(fullCloud->points[lowerInd].y) || 
+                std::isnan(fullCloud->points[upperInd].x) || std::isnan(fullCloud->points[upperInd].y)) { // 检查点是否有效
                 groundMatrix(i, j) = -1;                    // 标记无效点
                 continue;
             }
@@ -187,9 +211,12 @@ void CloudInterpolation::groundRemoval() {
 
                 float ds = sqrt(dX*dX + dY*dY + dZ*dZ);    // 计算点间距离
                 
+                // 如果两点间距离过大，不进行补丁，因为环之间有太多未知点
                 if(ds < distance_for_patch_between_rings) { // 判断是否需要补丁
                     ring_edge = i+1;                        // 更新环边缘
-                    float dt = 1.0/(ds/0.1+1);             // 计算插值步长
+                    float dt = 1.0/(ds/0.1+1);             // 计算插值步长，环间补丁 (动态步长):
+
+                    // 在两点之间插值生成补丁点
                     for(float t=0; t<=1.0; t+=dt) {        // 插值生成补丁点
                         pcl::PointXYZI a_pt;               // 创建新点
                         a_pt.intensity = 0.0;              // 设置强度值
@@ -198,6 +225,15 @@ void CloudInterpolation::groundRemoval() {
                         a_pt.z = fullCloud->points[lowerInd].z + dZ*t; // 计算Z坐标
                         patched_ground->push_back(a_pt);    // 添加到补丁点云
                     }
+                    
+                    // ✅ 添加遗漏的最终补丁点 (upperInd点)
+                    pcl::PointXYZI a_pt;
+                    a_pt.intensity = 0.0;
+                    a_pt.x = fullCloud->points[lowerInd].x + dX;
+                    a_pt.y = fullCloud->points[lowerInd].y + dY;
+                    a_pt.z = fullCloud->points[lowerInd].z + dZ;
+                    patched_ground->push_back(a_pt);
+                    
                     do_patch = true;                       // 设置补丁标志
                 }
             }
@@ -211,13 +247,14 @@ void CloudInterpolation::groundRemoval() {
         a_pt.intensity = 100;                              // 设置强度值
         patched_ground_edge->push_back(a_pt);              // 添加到边缘点云
 
+        // 处理前5帧的地面补丁，如果触发条件，则从最近的环边缘到基座链接补充地面点
         if(do_patch && first_frame_count_ < 5 && closest_ring_edge < groundScanIndex) { // 判断是否需要额外补丁
             size_t closest_ring_edgeInd = j + (closest_ring_edge)*HORIZONTAL_SCAN; // 计算最近环边缘点索引
             float dXf = -fullCloud->points[closest_ring_edgeInd].x; // 计算X方向差值
             float dYf = -fullCloud->points[closest_ring_edgeInd].y; // 计算Y方向差值
             float dZf = -fullCloud->points[closest_ring_edgeInd].z; // 计算Z方向差值
 
-            for(float t=0; t<=1.0; t+=0.05) {              // 生成额外补丁点
+            for(float t=0; t<=1.0; t+=0.05) {              // 生成额外补丁点，到基座的补丁 (固定步长):
                 pcl::PointXYZI a_ptf;                      // 创建新点
                 a_ptf.intensity = 0.0;                     // 设置强度值
                 a_ptf.x = fullCloud->points[closest_ring_edgeInd].x + dXf*t; // 计算X坐标
@@ -225,22 +262,29 @@ void CloudInterpolation::groundRemoval() {
                 a_ptf.z = fullCloud->points[closest_ring_edgeInd].z;         // 计算Z坐标
                 patched_ground->push_back(a_ptf);          // 添加到补丁点云
             }
+            
+            // ✅ 添加遗漏的额外补丁最终点
+            pcl::PointXYZI a_ptf;
+            a_ptf.intensity = 0.0;
+            a_ptf.x = fullCloud->points[closest_ring_edgeInd].x + dXf;
+            a_ptf.y = fullCloud->points[closest_ring_edgeInd].y + dYf;
+            a_ptf.z = fullCloud->points[closest_ring_edgeInd].z;
+            patched_ground->push_back(a_ptf);
         }
     }
 
-    pcl::PointCloud<pcl::PointXYZI>::Ptr processedGroundCloud(new pcl::PointCloud<pcl::PointXYZI>()); // 创建处理后的地面点云
-    for (size_t i = 0; i <= groundScanIndex; ++i) {        // 遍历地面扫描线
-        for (size_t j = 0; j < HORIZONTAL_SCAN; ++j) {     // 遍历每一列
-            if (groundMatrix(i, j) == 1) {                 // 检查是否为地面点
-                processedGroundCloud->push_back(fullCloud->points[j + i * HORIZONTAL_SCAN]); // 添加地面点
-            }
-        }
-    }
+    // 关键修改：保留原始点云 + 添加地面补丁，而不是只输出地面点
+    pcl::PointCloud<pcl::PointXYZI>::Ptr enhancedCloud(new pcl::PointCloud<pcl::PointXYZI>());
+    
+    // 1. 保留所有原始点云
+    *enhancedCloud = *groundCloud;  // 保持原始输入点云不变
+    
+    // 2. 添加地面补丁点
+    *enhancedCloud += *patched_ground;              // 添加补丁点云
+    *enhancedCloud += *patched_ground_edge;         // 添加边缘点云
 
-    *processedGroundCloud += *patched_ground;              // 合并补丁点云
-    *processedGroundCloud += *patched_ground_edge;         // 合并边缘点云
-
-    groundCloud = processedGroundCloud;                    // 更新地面点云
+    // 3. 更新输出
+    groundCloud = enhancedCloud;                    // 输出增强后的混合点云
 }
 
 void CloudInterpolation::setInputCloud(const pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud) {
@@ -252,6 +296,8 @@ pcl::PointCloud<pcl::PointXYZI>::Ptr CloudInterpolation::process() {
         return nullptr;
     }
 
+    // 与原始ImageProjection的cloudHandler保持一致的调用顺序
+    resetParameters();                                     // 重置参数 (对应原始的resetParameters)
     findStartEndAngle();                                  // 查找起始结束角度
     projectPointCloud();                                  // 投影点云
     groundRemoval();                                      // 地面点提取
@@ -260,4 +306,4 @@ pcl::PointCloud<pcl::PointXYZI>::Ptr CloudInterpolation::process() {
     return groundCloud;                                   // 返回处理后的地面点云
 }
 
-} // namespace terrain_analysis
+} // namespace terrain_analysis 

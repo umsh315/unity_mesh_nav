@@ -77,12 +77,9 @@ int ground_scan_index = 7;
 float vertical_angle_bottom = -15.0;
 float vertical_angle_top = 15.0;
 float sensor_mount_angle = 0.0;
+float scan_period = 0.05;
 
 // 投影参数
-float scan_period = 0.05;
-float segment_theta = 60.0;
-float segment_valid_point_num = 5;
-float segment_valid_line_num = 3;
 float maximum_detection_range = 120.0;
 float minimum_detection_range = 0.3;
 float distance_for_patch_between_rings = 1.0;
@@ -269,11 +266,8 @@ int main(int argc, char **argv) {
   nh->declare_parameter<float>("vertical_angle_bottom", vertical_angle_bottom);
   nh->declare_parameter<float>("vertical_angle_top", vertical_angle_top);
   nh->declare_parameter<float>("sensor_mount_angle", sensor_mount_angle);
-
   nh->declare_parameter<float>("scan_period", scan_period);
-  nh->declare_parameter<float>("segment_theta", segment_theta);
-  nh->declare_parameter<float>("segment_valid_point_num", segment_valid_point_num);
-  nh->declare_parameter<float>("segment_valid_line_num", segment_valid_line_num);
+
   nh->declare_parameter<float>("maximum_detection_range", maximum_detection_range);
   nh->declare_parameter<float>("minimum_detection_range", minimum_detection_range);
   nh->declare_parameter<float>("distance_for_patch_between_rings", distance_for_patch_between_rings);
@@ -322,11 +316,8 @@ int main(int argc, char **argv) {
   nh->get_parameter("vertical_angle_bottom", vertical_angle_bottom);
   nh->get_parameter("vertical_angle_top", vertical_angle_top);
   nh->get_parameter("sensor_mount_angle", sensor_mount_angle);
-
   nh->get_parameter("scan_period", scan_period);
-  nh->get_parameter("segment_theta", segment_theta);
-  nh->get_parameter("segment_valid_point_num", segment_valid_point_num);
-  nh->get_parameter("segment_valid_line_num", segment_valid_line_num);
+
   nh->get_parameter("maximum_detection_range", maximum_detection_range);
   nh->get_parameter("minimum_detection_range", minimum_detection_range);
   nh->get_parameter("distance_for_patch_between_rings", distance_for_patch_between_rings);
@@ -357,25 +348,27 @@ int main(int argc, char **argv) {
       newlaserCloud = false;
 
       // 点云补丁处理
-      // 创建点云处理器实例
-      CloudInterpolation processor;
-
-      // 设置激光雷达参数
-      processor.setLidarParams(num_vertical_scans,
-                            num_horizontal_scans,
-                            ground_scan_index,
-                            vertical_angle_bottom,
-                            vertical_angle_top,
-                            sensor_mount_angle);
-                            
-      // 设置投影参数
-      processor.setProjectionParams(scan_period,
-                                segment_theta,
-                                segment_valid_point_num,
-                                segment_valid_line_num,
-                                maximum_detection_range,
-                                minimum_detection_range,
-                                distance_for_patch_between_rings);
+      // 使用静态对象保持帧计数连续性
+      static CloudInterpolation processor;
+      
+      // 只在第一次调用时设置参数，static 变量只初始化一次
+      static bool params_initialized = false;
+      if (!params_initialized) {
+          // 设置激光雷达参数
+          processor.setLidarParams(num_vertical_scans,
+                                num_horizontal_scans,
+                                ground_scan_index,
+                                vertical_angle_bottom,
+                                vertical_angle_top,
+                                sensor_mount_angle);
+                                
+          // 设置投影参数
+          processor.setProjectionParams(scan_period,
+                                    maximum_detection_range,
+                                    minimum_detection_range,
+                                    distance_for_patch_between_rings);
+          params_initialized = true;
+      }
         
       // 设置输入点云数据
       processor.setInputCloud(laserCloudCrop);
