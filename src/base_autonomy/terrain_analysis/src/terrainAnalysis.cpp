@@ -69,6 +69,24 @@ double minRelZ = -1.5;
 double maxRelZ = 0.2;
 double disRatioZ = 0.2;
 
+
+// 激光雷达参数
+int num_vertical_scans = 16;
+int num_horizontal_scans = 1000;
+int ground_scan_index = 7;
+float vertical_angle_bottom = -15.0;
+float vertical_angle_top = 15.0;
+float sensor_mount_angle = 0.0;
+
+// 投影参数
+float scan_period = 0.05;
+float segment_theta = 60.0;
+float segment_valid_point_num = 5;
+float segment_valid_line_num = 3;
+float maximum_detection_range = 120.0;
+float minimum_detection_range = 0.3;
+float distance_for_patch_between_rings = 1.0;
+
 // terrain voxel parameters
 float terrainVoxelSize = 1.0;
 int terrainVoxelShiftX = 0;
@@ -244,6 +262,24 @@ int main(int argc, char **argv) {
   nh->declare_parameter<double>("disRatioZ", disRatioZ);
   nh->declare_parameter<int>("initFrameCount", initFrameCount);
 
+  // 在参数声明部分添加
+  nh->declare_parameter<int>("num_vertical_scans", num_vertical_scans);
+  nh->declare_parameter<int>("num_horizontal_scans", num_horizontal_scans);
+  nh->declare_parameter<int>("ground_scan_index", ground_scan_index);
+  nh->declare_parameter<float>("vertical_angle_bottom", vertical_angle_bottom);
+  nh->declare_parameter<float>("vertical_angle_top", vertical_angle_top);
+  nh->declare_parameter<float>("sensor_mount_angle", sensor_mount_angle);
+
+  nh->declare_parameter<float>("scan_period", scan_period);
+  nh->declare_parameter<float>("segment_theta", segment_theta);
+  nh->declare_parameter<float>("segment_valid_point_num", segment_valid_point_num);
+  nh->declare_parameter<float>("segment_valid_line_num", segment_valid_line_num);
+  nh->declare_parameter<float>("maximum_detection_range", maximum_detection_range);
+  nh->declare_parameter<float>("minimum_detection_range", minimum_detection_range);
+  nh->declare_parameter<float>("distance_for_patch_between_rings", distance_for_patch_between_rings);
+
+
+
   nh->get_parameter("scanVoxelSize", scanVoxelSize);
   nh->get_parameter("decayTime", decayTime);
   nh->get_parameter("noDecayDis", noDecayDis);
@@ -277,6 +313,26 @@ int main(int argc, char **argv) {
   nh->get_parameter("disRatioZ", disRatioZ);
   nh->get_parameter("initFrameCount", initFrameCount);
 
+
+  
+  // 在参数获取部分添加
+  nh->get_parameter("num_vertical_scans", num_vertical_scans);
+  nh->get_parameter("num_horizontal_scans", num_horizontal_scans);
+  nh->get_parameter("ground_scan_index", ground_scan_index);
+  nh->get_parameter("vertical_angle_bottom", vertical_angle_bottom);
+  nh->get_parameter("vertical_angle_top", vertical_angle_top);
+  nh->get_parameter("sensor_mount_angle", sensor_mount_angle);
+
+  nh->get_parameter("scan_period", scan_period);
+  nh->get_parameter("segment_theta", segment_theta);
+  nh->get_parameter("segment_valid_point_num", segment_valid_point_num);
+  nh->get_parameter("segment_valid_line_num", segment_valid_line_num);
+  nh->get_parameter("maximum_detection_range", maximum_detection_range);
+  nh->get_parameter("minimum_detection_range", minimum_detection_range);
+  nh->get_parameter("distance_for_patch_between_rings", distance_for_patch_between_rings);
+
+
+
   auto subOdometry = nh->create_subscription<nav_msgs::msg::Odometry>("/state_estimation", 5, odometryHandler);
 
   auto subLaserCloud = nh->create_subscription<sensor_msgs::msg::PointCloud2>("/registered_scan", 5, laserCloudHandler);
@@ -299,6 +355,42 @@ int main(int argc, char **argv) {
     rclcpp::spin_some(nh);
     if (newlaserCloud) {
       newlaserCloud = false;
+
+      // 点云补丁处理
+      // 创建点云处理器实例
+      CloudInterpolation processor;
+
+      // 设置激光雷达参数
+      processor.setLidarParams(num_vertical_scans,
+                            num_horizontal_scans,
+                            ground_scan_index,
+                            vertical_angle_bottom,
+                            vertical_angle_top,
+                            sensor_mount_angle);
+                            
+      // 设置投影参数
+      processor.setProjectionParams(scan_period,
+                                segment_theta,
+                                segment_valid_point_num,
+                                segment_valid_line_num,
+                                maximum_detection_range,
+                                minimum_detection_range,
+                                distance_for_patch_between_rings);
+        
+      // 设置输入点云数据
+      processor.setInputCloud(laserCloudCrop);
+      
+      // 执行处理操作
+      pcl::PointCloud<pcl::PointXYZI>::Ptr processedCloud = processor.process();
+      
+      if (processedCloud) {
+          *terrainCloud = *processedCloud;
+      }
+      else {
+          RCLCPP_WARN(nh->get_logger(), "Ground processing failed");
+      }
+        
+    
 
       // terrain voxel roll over
       float terrainVoxelCenX = terrainVoxelSize * terrainVoxelShiftX;
@@ -628,55 +720,6 @@ int main(int argc, char **argv) {
         }
       }
 
-      // 在初始5帧时进行点云插值
-      if (initFrameCount < 20 && systemInited) {
-          RCLCPP_INFO(nh->get_logger(), "Starting interpolation on frame %d, original points: %d", 
-                     initFrameCount, terrainCloudElev->size());
-          
-          // 创建点云插值器实例
-          CloudInterpolation interpolator;
-          
-          // 设置输入点云数据
-          // terrainCloudElev 是已经经过地形分析处理的点云数据
-          // 包含了地面高程信息(intensity字段存储了相对高度)
-          interpolator.setInputCloud(terrainCloudElev);
-          
-          // 设置车辆当前位置作为参考点
-          // vehicleX, vehicleY, vehicleZ 是车辆在世界坐标系中的位置
-          // 用于计算相对位置和判断插值区域
-          interpolator.setVehiclePosition(vehicleX, vehicleY, vehicleZ);
-          
-          // 设置需要进行插值的区域范围
-          // noDataAreaMinX/MaxX/MinY/MaxY 定义了车辆周围需要被插值处理的区域
-          // 这个区域通常是在车辆前方的一个矩形区域
-          interpolator.setNoDataArea(noDataAreaMinX, noDataAreaMaxX, 
-                                  noDataAreaMinY, noDataAreaMaxY);
-          
-          // 设置插值算法的关键参数
-          // planarVoxelSize: 平面网格的大小，决定了插值的精度
-          // minBlockPointNum: 每个网格中最少需要的点数，用于判断是否需要插值
-          // maxElevBelowVeh: 相对于车辆的最大下方高度，用于过滤异常点
-          interpolator.setParameters(planarVoxelSize, minBlockPointNum, maxElevBelowVeh);
-          
-          RCLCPP_INFO(nh->get_logger(), "Parameters set - grid area: [%.2f, %.2f, %.2f, %.2f], voxel size: %.2f", 
-                     noDataAreaMinX, noDataAreaMaxX, noDataAreaMinY, noDataAreaMaxY, planarVoxelSize);
-          
-          // 执行插值操作，返回插值后的点云
-          pcl::PointCloud<pcl::PointXYZI>::Ptr interpolatedCloud = interpolator.interpolate();
-          
-          // 如果插值成功，将插值结果合并到原始点云中
-          if (interpolatedCloud) {
-              *terrainCloudElev += *interpolatedCloud;
-              RCLCPP_INFO(nh->get_logger(), "Interpolation completed, added %d points, total points: %d", 
-                         interpolatedCloud->size(), terrainCloudElev->size());
-          } else {
-              RCLCPP_WARN(nh->get_logger(), "Interpolation failed, no points added");
-          }
-          
-          // 帧计数器加1
-          initFrameCount++;
-          RCLCPP_INFO(nh->get_logger(), "Frame %d interpolation completed", initFrameCount);
-      }
 
       if (noDataObstacle && noDataInited == 2) {
         for (int i = 0; i < planarVoxelNum; i++) {
