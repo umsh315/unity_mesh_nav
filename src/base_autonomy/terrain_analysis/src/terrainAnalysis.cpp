@@ -333,6 +333,12 @@ int main(int argc, char **argv) {
   auto subClearing = nh->create_subscription<std_msgs::msg::Float32>("/map_clearing", 5, clearingHandler);
 
   auto pubLaserCloud = nh->create_publisher<sensor_msgs::msg::PointCloud2>("/terrain_map", 2);
+  
+  // 添加调试用的发布器：发布地面补丁处理后的点云
+  auto pubPatchedCloud = nh->create_publisher<sensor_msgs::msg::PointCloud2>("/patched_cloud_debug", 2);
+  
+  // 添加调试用的发布器：发布原始输入点云（用于对比）
+  auto pubInputCloud = nh->create_publisher<sensor_msgs::msg::PointCloud2>("/input_cloud_debug", 2);
 
   for (int i = 0; i < terrainVoxelNum; i++) {
     terrainVoxelCloud[i].reset(new pcl::PointCloud<pcl::PointXYZI>());
@@ -373,11 +379,35 @@ int main(int argc, char **argv) {
       // 设置输入点云数据
       processor.setInputCloud(laserCloudCrop);
       
+      // 发布调试点云：原始输入点云（用于对比）
+      sensor_msgs::msg::PointCloud2 inputCloudMsg;
+      pcl::toROSMsg(*laserCloudCrop, inputCloudMsg);
+      inputCloudMsg.header.stamp = rclcpp::Time(static_cast<uint64_t>(laserCloudTime * 1e9));
+      inputCloudMsg.header.frame_id = "map";
+      pubInputCloud->publish(inputCloudMsg);
+      
+      // 记录输入点云大小用于对比
+      size_t inputCloudSize = laserCloudCrop->points.size();
+      
       // 执行处理操作
       pcl::PointCloud<pcl::PointXYZI>::Ptr processedCloud = processor.process();
       
       if (processedCloud) {
           *terrainCloud = *processedCloud;
+          
+          // 发布调试点云：地面补丁处理后的混合点云
+          sensor_msgs::msg::PointCloud2 patchedCloudMsg;
+          pcl::toROSMsg(*processedCloud, patchedCloudMsg);
+          patchedCloudMsg.header.stamp = rclcpp::Time(static_cast<uint64_t>(laserCloudTime * 1e9));
+          patchedCloudMsg.header.frame_id = "map";
+          pubPatchedCloud->publish(patchedCloudMsg);
+          
+          // 输出调试信息：对比输入和输出点云大小
+          size_t outputCloudSize = processedCloud->points.size();
+          size_t patchPointsCount = (outputCloudSize > inputCloudSize) ? (outputCloudSize - inputCloudSize) : 0;
+          
+          RCLCPP_INFO(nh->get_logger(), "CloudInterpolation: Input=%zu, Output=%zu, Patches=%zu", 
+                     inputCloudSize, outputCloudSize, patchPointsCount);
       }
       else {
           RCLCPP_WARN(nh->get_logger(), "Ground processing failed");
