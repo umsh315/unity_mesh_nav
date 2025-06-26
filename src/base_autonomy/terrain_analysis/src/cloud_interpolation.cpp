@@ -1,6 +1,12 @@
 #include "../include/terrain_analysis/cloud_interpolation.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include <cmath>
+#include <math.h>
+#include <time.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <chrono>
+#include <cfloat>  // 添加缺失的头文件
 
 namespace terrain_analysis {
 
