@@ -15,7 +15,7 @@
 
 #include "tf2/transform_datatypes.h"
 #include "tf2_ros/transform_broadcaster.h"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/kdtree/kdtree_flann.h>
@@ -29,10 +29,7 @@
 #include "rmw/types.h"
 #include "rmw/qos_profiles.h"
 
-#include "terrain_analysis/cloud_interpolation.hpp"
-
 using namespace std;
-using namespace terrain_analysis;       //CloudInterpolation 类是在 terrain_analysis 命名空间中定义的，要声明
 
 const double PI = 3.1415926;
 
@@ -68,21 +65,6 @@ double voxelTimeUpdateThre = 2.0;
 double minRelZ = -1.5;
 double maxRelZ = 0.2;
 double disRatioZ = 0.2;
-
-
-// 激光雷达参数
-int num_vertical_scans = 16;
-int num_horizontal_scans = 1000;
-int ground_scan_index = 7;
-float vertical_angle_bottom = -15.0;
-float vertical_angle_top = 15.0;
-float sensor_mount_angle = 0.0;
-float scan_period = 0.05;
-
-// 投影参数
-float maximum_detection_range = 120.0;
-float minimum_detection_range = 0.3;
-float distance_for_patch_between_rings = 1.0;
 
 // terrain voxel parameters
 float terrainVoxelSize = 1.0;
@@ -123,8 +105,6 @@ bool newlaserCloud = false;
 double systemInitTime = 0;
 bool systemInited = false;
 int noDataInited = 0;
-
-int initFrameCount = 0;  // 添加初始帧计数器
 
 float vehicleRoll = 0, vehiclePitch = 0, vehicleYaw = 0;
 float vehicleX = 0, vehicleY = 0, vehicleZ = 0;
@@ -257,22 +237,6 @@ int main(int argc, char **argv) {
   nh->declare_parameter<double>("minRelZ", minRelZ);
   nh->declare_parameter<double>("maxRelZ", maxRelZ);
   nh->declare_parameter<double>("disRatioZ", disRatioZ);
-  nh->declare_parameter<int>("initFrameCount", initFrameCount);
-
-  // 在参数声明部分添加
-  nh->declare_parameter<int>("num_vertical_scans", num_vertical_scans);
-  nh->declare_parameter<int>("num_horizontal_scans", num_horizontal_scans);
-  nh->declare_parameter<int>("ground_scan_index", ground_scan_index);
-  nh->declare_parameter<float>("vertical_angle_bottom", vertical_angle_bottom);
-  nh->declare_parameter<float>("vertical_angle_top", vertical_angle_top);
-  nh->declare_parameter<float>("sensor_mount_angle", sensor_mount_angle);
-  nh->declare_parameter<float>("scan_period", scan_period);
-
-  nh->declare_parameter<float>("maximum_detection_range", maximum_detection_range);
-  nh->declare_parameter<float>("minimum_detection_range", minimum_detection_range);
-  nh->declare_parameter<float>("distance_for_patch_between_rings", distance_for_patch_between_rings);
-
-
 
   nh->get_parameter("scanVoxelSize", scanVoxelSize);
   nh->get_parameter("decayTime", decayTime);
@@ -305,24 +269,6 @@ int main(int argc, char **argv) {
   nh->get_parameter("minRelZ", minRelZ);
   nh->get_parameter("maxRelZ", maxRelZ);
   nh->get_parameter("disRatioZ", disRatioZ);
-  nh->get_parameter("initFrameCount", initFrameCount);
-
-
-  
-  // 在参数获取部分添加
-  nh->get_parameter("num_vertical_scans", num_vertical_scans);
-  nh->get_parameter("num_horizontal_scans", num_horizontal_scans);
-  nh->get_parameter("ground_scan_index", ground_scan_index);
-  nh->get_parameter("vertical_angle_bottom", vertical_angle_bottom);
-  nh->get_parameter("vertical_angle_top", vertical_angle_top);
-  nh->get_parameter("sensor_mount_angle", sensor_mount_angle);
-  nh->get_parameter("scan_period", scan_period);
-
-  nh->get_parameter("maximum_detection_range", maximum_detection_range);
-  nh->get_parameter("minimum_detection_range", minimum_detection_range);
-  nh->get_parameter("distance_for_patch_between_rings", distance_for_patch_between_rings);
-
-
 
   auto subOdometry = nh->create_subscription<nav_msgs::msg::Odometry>("/state_estimation", 5, odometryHandler);
 
@@ -333,12 +279,6 @@ int main(int argc, char **argv) {
   auto subClearing = nh->create_subscription<std_msgs::msg::Float32>("/map_clearing", 5, clearingHandler);
 
   auto pubLaserCloud = nh->create_publisher<sensor_msgs::msg::PointCloud2>("/terrain_map", 2);
-  
-  // 添加调试用的发布器：发布地面补丁处理后的点云
-  auto pubPatchedCloud = nh->create_publisher<sensor_msgs::msg::PointCloud2>("/patched_cloud_debug", 2);
-  
-  // 添加调试用的发布器：发布原始输入点云（用于对比）
-  auto pubInputCloud = nh->create_publisher<sensor_msgs::msg::PointCloud2>("/input_cloud_debug", 2);
 
   for (int i = 0; i < terrainVoxelNum; i++) {
     terrainVoxelCloud[i].reset(new pcl::PointCloud<pcl::PointXYZI>());
@@ -352,68 +292,6 @@ int main(int argc, char **argv) {
     rclcpp::spin_some(nh);
     if (newlaserCloud) {
       newlaserCloud = false;
-
-      // 点云补丁处理
-      // 使用静态对象保持帧计数连续性
-      static CloudInterpolation processor;
-      
-      // 只在第一次调用时设置参数，static 变量只初始化一次
-      static bool params_initialized = false;
-      if (!params_initialized) {
-          // 设置激光雷达参数
-          processor.setLidarParams(num_vertical_scans,
-                                num_horizontal_scans,
-                                ground_scan_index,
-                                vertical_angle_bottom,
-                                vertical_angle_top,
-                                sensor_mount_angle);
-                                
-          // 设置投影参数
-          processor.setProjectionParams(scan_period,
-                                    maximum_detection_range,
-                                    minimum_detection_range,
-                                    distance_for_patch_between_rings);
-          params_initialized = true;
-      }
-        
-      // 设置输入点云数据
-      processor.setInputCloud(laserCloudCrop);
-      
-      // 发布调试点云：原始输入点云（用于对比）
-      sensor_msgs::msg::PointCloud2 inputCloudMsg;
-      pcl::toROSMsg(*laserCloudCrop, inputCloudMsg);
-      inputCloudMsg.header.stamp = rclcpp::Time(static_cast<uint64_t>(laserCloudTime * 1e9));
-      inputCloudMsg.header.frame_id = "map";
-      pubInputCloud->publish(inputCloudMsg);
-      
-      // 记录输入点云大小用于对比
-      size_t inputCloudSize = laserCloudCrop->points.size();
-      
-      // 执行处理操作
-      pcl::PointCloud<pcl::PointXYZI>::Ptr processedCloud = processor.process();
-      
-      if (processedCloud) {
-          *terrainCloud = *processedCloud;
-          
-          // 发布调试点云：地面补丁处理后的混合点云
-          sensor_msgs::msg::PointCloud2 patchedCloudMsg;
-          pcl::toROSMsg(*processedCloud, patchedCloudMsg);
-          patchedCloudMsg.header.stamp = rclcpp::Time(static_cast<uint64_t>(laserCloudTime * 1e9));
-          patchedCloudMsg.header.frame_id = "map";
-          pubPatchedCloud->publish(patchedCloudMsg);
-          
-          // 输出调试信息：对比输入和输出点云大小
-          size_t outputCloudSize = processedCloud->points.size();
-          size_t patchPointsCount = (outputCloudSize > inputCloudSize) ? (outputCloudSize - inputCloudSize) : 0;
-          
-          RCLCPP_INFO(nh->get_logger(), "CloudInterpolation: Input=%zu, Output=%zu, Patches=%zu", 
-                     inputCloudSize, outputCloudSize, patchPointsCount);
-      }
-      else {
-          RCLCPP_WARN(nh->get_logger(), "Ground processing failed");
-      }
-        
-    
 
       // terrain voxel roll over
       float terrainVoxelCenX = terrainVoxelSize * terrainVoxelShiftX;
@@ -619,7 +497,7 @@ int main(int argc, char **argv) {
 
                 float dis4 = sqrt(pointX4 * pointX4 + pointY4 * pointY4);
                 float angle4 = atan2(pointZ4, dis4) * 180.0 / PI;
-                if ((angle4 > minDyObsVFOV && angle4 < maxDyObsVFOV) || fabs(pointZ4) < absDyObsRelZThre) {
+                if (angle4 > minDyObsVFOV && angle4 < maxDyObsVFOV || fabs(pointZ4) < absDyObsRelZThre) {
                   planarVoxelDyObs[planarVoxelWidth * indX + indY]++;
                 }
               }
@@ -742,7 +620,6 @@ int main(int argc, char **argv) {
           }
         }
       }
-
 
       if (noDataObstacle && noDataInited == 2) {
         for (int i = 0; i < planarVoxelNum; i++) {
