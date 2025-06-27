@@ -18,6 +18,7 @@ import numpy as np  # 导入numpy库
 import yaml  # 导入YAML解析库
 
 import os  # 导入操作系统接口
+   
 
 class Repuber(Node):  # 定义传感器转换节点类
     def __init__(self):  # 初始化方法
@@ -30,7 +31,7 @@ class Repuber(Node):  # 定义传感器转换节点类
             history=QoSHistoryPolicy.KEEP_LAST
 )
         self.imu_sub = self.create_subscription(SportModeState, '/sportmodestate', self.imu_callback, 50)  # 创建IMU订阅者
-        self.cloud_sub = self.create_subscription(PointCloud2, '/lidar_points', self.cloud_callback, 50)  # 创建点云订阅者
+        self.cloud_sub = self.create_subscription(PointCloud2, '/raw_processed_cloud', self.cloud_callback, 50)  # 创建点云订阅者
 
         # self.cloud_sub = self.create_subscription(PointCloud2, '/cloud_result', self.cloud_callback, 50)  # 创建降采样点云订阅者
 
