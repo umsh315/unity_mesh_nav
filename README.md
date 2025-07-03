@@ -13,9 +13,10 @@
 
 ## 2, シミュレーション環境の構築
 ### シミュレーションモデルのロード
-   1、Go2用のunity環境をダウンロードし、'src/base_autonomy/vehicle_simulator/mesh/unity'フォルダに解凍する。
+   1、Go2用のunity環境をダウンロードし、'src/base_autonomy/vehicle_simulator/mesh/unity'フォルダに解凍する
    環境モデルのファイル構造は以下のようにする：
-   '''
+    
+```
    mesh/
       unity/
          environment/
@@ -30,19 +31,26 @@
          traversable_area.ply   # 通過可否エリア
          map.jpg               # 地図画像
          render.jpg            # レンダリングイメージ
-    '''
+```
 
 ### シミュレーションの起動
 #### ビルド
+```
 colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
-
+```
 
 #### No view mode
+```
    ./system_simulation.sh
-
+```
 #### GUIを用いた可視化モード
+```
    ./system_simulation_with_route_planner.sh
+```
+  or
+```
    ./system_simulation_with_exploration_planner.sh
+```
 
 
    1、可視化モードコントロール：
@@ -59,18 +67,20 @@ colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
 ## 3, 実機テスト
 ### Docking stationへのインストール
 #### 依存関係のインストール
-
+```
    sudo apt update
    sudo apt install libusb-dev ros-$ROS_DISTRO-perception-pcl ros-$ROS_DISTRO-sensor-msgs-py ros-$ROS_DISTRO-tf-transformations ros-$ROS_DISTRO-joy ros-$ROS_DISTRO-rosidl-generator-dds-idl
    pip install transforms3d pyyaml
+```
 
 
 ### 外部ホストPCへのインストール
 #### 依存関係のインストール
-
+```
    sudo apt update
    sudo apt install -y libusb-dev ros-$ROS_DISTRO-perception-pcl ros-$ROS_DISTRO-sensor-msgs-py ros-$ROS_DISTRO-tf-transformations ros-$ROS_DISTRO-joy ros-$ROS_DISTRO-rmw-cyclonedds-cpp ros-$ROS_DISTRO-rosidl-generator-dds-idl ros-$ROS_DISTRO-tf2-sensor-msgs python3-colcon-common-extensions python-is-python3 gstreamer1.0-plugins-bad gstreamer1.0-libav
    pip install transforms3d pyyaml
+```
 
    GStreamer LibAVプラグイン
    - オーディオ及び, ビデオコーデックのサポート
@@ -78,14 +88,18 @@ colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
    - マルチメディアフォーマットのサポート
 
 #### パッケージのコンパイル
+```
    colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
    colcon build --packages-select far_planner
    colcon build --packages-select go2_h264_repub
    colcon build --packages-select tare_planner
+```
 
 #### IMU calibration
+```
    source install/setup.bash
    ros2 run calibrate_imu calibrate_imu
+```
 
 #### nodeの起動
 
@@ -95,13 +109,18 @@ colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
    ./system_real_robot.sh
 
    ルートプランナーを含む起動command
+   ```
    ./system_real_robot_with_route_planner.sh
+```
+  or
+```
    ./system_real_robot_with_exploration_planner.sh
+```
 
 #### AI制御の起動
-
+```
 ros2 launch go2_cmd go2_ai_cmd_test.launch.py
-
+```
 
 
 #### カメラドライバの起動：
