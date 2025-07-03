@@ -1,49 +1,50 @@
-# 在GO2实物平台上调试FAR planner算法
+# Go2 path planner algorithm
 
-## 一、系统包含模块
-- SLAM模块
-- 路径规划器
-- 基础自主系统
-  其中基础自主系统进一步包括用于：
-  - 地形可通行性分析
-  - 避障
-  - 航点跟踪
-的基础导航模块。
+## 1, システム内のモジュール
+- SLAMモジュール
+- パスプランナー
+- 基礎自立システム
+  更に以下を含む：
+  - 地形通過正分析
+  - 障害物回避
+  - ウェイポイント追跡
+ナビゲーションモジュール
 
 
-## 二、仿真环境构建
-### 仿真模型加载
-   1、下载Go2的Unity环境模型，并解压到'src/base_autonomy/vehicle_simulator/mesh/unity'文件夹。环境模型文件结构应如下所示：
+## 2, シミュレーション環境の構築
+### シミュレーションモデルのロード
+   1、Go2用のunity環境をダウンロードし、'src/base_autonomy/vehicle_simulator/mesh/unity'フォルダに解凍する。
+   環境モデルのファイル構造は以下のようにする：
    mesh/
       unity/
          environment/
-               Model_Data/ (文件夹中包含多个文件)
+               Model_Data/ (複数ファイルを含む)
                Model.x86_64
                UnityPlayer.so
-               AssetList.csv (运行时生成)
+               AssetList.csv (実行時に生成)
                Dimensions.csv
                Categories.csv
-         map.ply                # 地图文件
-         object_list.txt        # 对象列表
-         traversable_area.ply   # 可通行区域
-         map.jpg               # 地图图片
-         render.jpg            # 渲染图片
+         map.ply                # 地図ファイル
+         object_list.txt        # オブジェクトリスト
+         traversable_area.ply   # 通過可否エリア
+         map.jpg               # 地図画像
+         render.jpg            # レンダリングイメージ
 
-### 启动仿真环境
-#### 构建
+### シミュレーションの起動
+#### ビルド
 colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
 
 
-#### 无可视图模式
+#### No view mode
    ./system_simulation.sh
 
-#### 有可视图模式
+#### GUIを用いた可視化モード
    ./system_simulation_with_route_planner.sh
    ./system_simulation_with_exploration_planner.sh
 
 
-   1、可视图控制：
-   - 点击'Reset Visibility Graph'按钮：重新初始化可视图
+   1、可視化モードコントロール：
+   - 'Reset Visibility Graph'ボタン：可視化グラフの更新
    - 取消勾选'Update Visibility Graph'复选框：停止更新可视图
 
    2、规划模式控制：
