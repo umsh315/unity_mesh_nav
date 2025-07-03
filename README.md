@@ -3,7 +3,7 @@
 ## 1, システム内のモジュール
 - SLAMモジュール
 - パスプランナー
-- 基礎自立システム
+- 基礎自律システム
   更に以下を含む：
   - 地形通過正分析
   - 障害物回避
@@ -45,89 +45,89 @@ colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
 
    1、可視化モードコントロール：
    - 'Reset Visibility Graph'ボタン：可視化グラフの更新
-   - 取消勾选'Update Visibility Graph'复选框：停止更新可视图
+   - チェックボックス'Update Visibility Graph'のチェックを外す：更新を停止
 
-   2、规划模式控制：
-   通过'Planning Attemptable'复选框：
-   - 勾选时：规划器会先尝试在自由空间中找路径（路径显示为绿色）
-   - 取消勾选时：如果在自由空间中找不到路径，规划器会同时考虑未知空间（路径显示为蓝色）
+   2、planning mode control：
+   チェックボックス'Planning Attemptable'を有効化：
+   - 有効時：自由空間で経路を探索（経路は緑色で表示される）
+   - 無効時：自由空間で経路が見つからなかった場合，未知の空間も考慮して経路を探索する（経路は青色で表示される）
 
 
 
-## 三、实物测试
-### 在拓展坞安装
-#### 安装依赖
+## 3, 実機テスト
+### Docking stationへのインストール
+#### 依存関係のインストール
 
    sudo apt update
    sudo apt install libusb-dev ros-$ROS_DISTRO-perception-pcl ros-$ROS_DISTRO-sensor-msgs-py ros-$ROS_DISTRO-tf-transformations ros-$ROS_DISTRO-joy ros-$ROS_DISTRO-rosidl-generator-dds-idl
    pip install transforms3d pyyaml
 
 
-### 在上位机安装
-#### 安装依赖
+### 外部ホストPCへのインストール
+#### 依存関係のインストール
 
    sudo apt update
    sudo apt install -y libusb-dev ros-$ROS_DISTRO-perception-pcl ros-$ROS_DISTRO-sensor-msgs-py ros-$ROS_DISTRO-tf-transformations ros-$ROS_DISTRO-joy ros-$ROS_DISTRO-rmw-cyclonedds-cpp ros-$ROS_DISTRO-rosidl-generator-dds-idl ros-$ROS_DISTRO-tf2-sensor-msgs python3-colcon-common-extensions python-is-python3 gstreamer1.0-plugins-bad gstreamer1.0-libav
    pip install transforms3d pyyaml
 
-   GStreamer LibAV插件
-   - 提供音视频编解码支持
-   - 基于FFmpeg/LibAV
-   - 支持常见多媒体格式
+   GStreamer LibAVプラグイン
+   - オーディオ及び, ビデオコーデックのサポート
+   - FFmpeg/LibAV base
+   - マルチメディアフォーマットのサポート
 
-#### 编译功能包
+#### パッケージのコンパイル
    colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
    colcon build --packages-select far_planner
    colcon build --packages-select go2_h264_repub
    colcon build --packages-select tare_planner
 
-#### IMU校准
+#### IMU calibration
    source install/setup.bash
    ros2 run calibrate_imu calibrate_imu
 
-#### 启动节点
+#### nodeの起動
 
-   这将启动：
-   - SLAM模块
-   - 基础自主系统
+   基本的な起動：
+   - SLAMモジュール
+   - 基本的な自律システム
    ./system_real_robot.sh
 
-   要使用路线规划器启动系统，请使用下面的命令行。
+   ルートプランナーを含む起動command
    ./system_real_robot_with_route_planner.sh
    ./system_real_robot_with_exploration_planner.sh
 
-#### 启动AI运控
+#### AI制御の起動
 
 ros2 launch go2_cmd go2_ai_cmd_test.launch.py
 
 
 
-#### 启动相机驱动：
-   1. 在新的终端中：
-      - 进入代码库文件夹
-      - 使用下面的命令行
+#### カメラドライバの起動：
+   1. 新規ターミナルの作成：
+      - プロジェクトフォルダへ移動
+      - 下記コマンドの起動
       2) source install/setup.bash
       3) ros2 run go2_h264_repub go2_h264_repub --ros-args -p multicast_iface:=wlp0s20f3
-      (网口根据自己实际情况调整)
+      (ネットワークインターフェース名は別途変更)
       
 
-   2. 相机驱动功能：
-      - 接收H.264视频流
-      - 在'/camera/image/raw'话题上发布图像
+   2. カメラドライブ機能：
+      - H.264ビデオストリームを受信
+      - '/camera/image/raw'に画像を配信
 
 
-# 备注
-1、激光雷达限制
+# 備考
+1、ライダーの限界
 
-L1激光雷达特点：
-- 低成本
-- 噪声较高
-- 地形可通行性分析无法识别低障碍物
-- 环境中障碍物需要高于地面0.3米以上
+Unitree L1 Lidar：
+- 低コスト
+- ノイズが大きい
+- 低い障害物の認識が困難
+- 環境内の障害物は地上0.3m以上である必要がある
 
 
 
-2、角点
+2、
    1. 尖角（Sharp Corner）
    曲率变化最大的点
    通常是墙角、物体边缘等
