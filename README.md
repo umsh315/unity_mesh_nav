@@ -15,6 +15,7 @@
 ### シミュレーションモデルのロード
    1、Go2用のunity環境をダウンロードし、'src/base_autonomy/vehicle_simulator/mesh/unity'フォルダに解凍する。
    環境モデルのファイル構造は以下のようにする：
+   '''
    mesh/
       unity/
          environment/
@@ -29,6 +30,7 @@
          traversable_area.ply   # 通過可否エリア
          map.jpg               # 地図画像
          render.jpg            # レンダリングイメージ
+    '''
 
 ### シミュレーションの起動
 #### ビルド
