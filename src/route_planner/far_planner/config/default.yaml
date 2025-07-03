@@ -3,7 +3,7 @@ far_planner:
     # Dynamic Planner Default Params
     main_run_freq: 5.0
     voxel_dim: 0.1  # Unit: meter
-    robot_dim: 0.6   # Unit: meter
+    robot_dim: 0.3   # Unit: meter              默认值0.6 
     vehicle_height: 0.5  # Unit: meter          # 限制目标点z轴高度最低值 地形高度 + 车辆高度
     sensor_range: 10.0  # Unit: meter
     terrain_range: 7.5   # Unit: meter
@@ -30,7 +30,7 @@ far_planner:
     # Dynamic Planner Utility Params
     util/angle_noise: 16.0  # Unit: degree
     util/accept_max_align_angle: 4.0   # Unit: degree
-    util/obs_inflate_size: 1
+    util/obs_inflate_size: 1                              # 默认值1
     util/new_intensity_thred: 2.0
     util/terrain_free_Z: 0.15
     util/dyosb_update_thred: 4

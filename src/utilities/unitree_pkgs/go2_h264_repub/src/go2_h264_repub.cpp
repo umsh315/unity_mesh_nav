@@ -29,7 +29,7 @@ public:
                     ros_image->header.stamp = this->get_clock()->now();
                     image_publisher_->publish(*ros_image);
 
-                    RCLCPP_INFO(this->get_logger(),"published image frame");
+                    // RCLCPP_INFO(this->get_logger(),"published image frame");
                     // std::cout << "pubed!" << std::endl;
                 }
                 cv::waitKey(10);
